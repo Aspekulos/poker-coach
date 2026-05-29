@@ -19,8 +19,9 @@ const Trainer = dynamic(() => import('@/components/Trainer'), { ssr: false, load
 const EquityCalc = dynamic(() => import('@/components/EquityCalc'), { ssr: false, loading: Loading })
 const PositionStrategy = dynamic(() => import('@/components/PositionStrategy'), { ssr: false, loading: Loading })
 const HandAnalyzer = dynamic(() => import('@/components/HandAnalyzer'), { ssr: false, loading: Loading })
+const TableMap = dynamic(() => import('@/components/TableMap'), { ssr: false })
 
-type TabId = 'trainer' | 'ranges' | 'pushfold' | 'equity' | 'strategy' | 'analyze'
+type TabId = 'trainer' | 'ranges' | 'pushfold' | 'equity' | 'strategy' | 'table' | 'analyze'
 
 const TABS: { id: TabId; label: string; desc: string }[] = [
   { id: 'trainer',  label: '🎯 Trainer',      desc: 'Quiz interactif' },
@@ -28,11 +29,12 @@ const TABS: { id: TabId; label: string; desc: string }[] = [
   { id: 'pushfold', label: '⚡ Push/Fold',     desc: 'Nash < 15BB' },
   { id: 'equity',   label: '🎲 Équité',        desc: 'Calculateur' },
   { id: 'strategy', label: '🧠 Stratégie',    desc: 'Par position' },
+  { id: 'table',    label: '🪑 Positions',    desc: 'Repère visuel' },
   { id: 'analyze',  label: '🔍 Analyser',      desc: 'Main Winamax' },
 ]
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<TabId>('trainer')
+  const [activeTab, setActiveTab] = useState<TabId>('table')
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f0f0f' }}>
@@ -80,6 +82,7 @@ export default function Home() {
         {activeTab === 'pushfold' && <PushFoldChart />}
         {activeTab === 'equity' && <EquityCalc />}
         {activeTab === 'strategy' && <PositionStrategy />}
+        {activeTab === 'table' && <TableMap />}
         {activeTab === 'analyze' && <HandAnalyzer />}
       </main>
     </div>
