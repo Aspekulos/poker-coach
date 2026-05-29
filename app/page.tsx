@@ -1,65 +1,87 @@
-import Image from "next/image";
+'use client'
+
+import { useState } from 'react'
+import dynamic from 'next/dynamic'
+
+const Loading = () => (
+  <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke="#22c55e" strokeWidth="2.5" strokeDasharray="40 20" strokeLinecap="round">
+        <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
+      </circle>
+    </svg>
+  </div>
+)
+
+const RangeMatrix = dynamic(() => import('@/components/RangeMatrix'), { ssr: false, loading: Loading })
+const PushFoldChart = dynamic(() => import('@/components/PushFoldChart'), { ssr: false, loading: Loading })
+const Trainer = dynamic(() => import('@/components/Trainer'), { ssr: false, loading: Loading })
+const EquityCalc = dynamic(() => import('@/components/EquityCalc'), { ssr: false, loading: Loading })
+const PositionStrategy = dynamic(() => import('@/components/PositionStrategy'), { ssr: false, loading: Loading })
+const HandAnalyzer = dynamic(() => import('@/components/HandAnalyzer'), { ssr: false, loading: Loading })
+
+type TabId = 'trainer' | 'ranges' | 'pushfold' | 'equity' | 'strategy' | 'analyze'
+
+const TABS: { id: TabId; label: string; desc: string }[] = [
+  { id: 'trainer',  label: '🎯 Trainer',      desc: 'Quiz interactif' },
+  { id: 'ranges',   label: '📊 Ranges RFI',   desc: "Grille d'ouvertures" },
+  { id: 'pushfold', label: '⚡ Push/Fold',     desc: 'Nash < 15BB' },
+  { id: 'equity',   label: '🎲 Équité',        desc: 'Calculateur' },
+  { id: 'strategy', label: '🧠 Stratégie',    desc: 'Par position' },
+  { id: 'analyze',  label: '🔍 Analyser',      desc: 'Main Winamax' },
+]
 
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<TabId>('trainer')
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div style={{ minHeight: '100vh', background: '#0f0f0f' }}>
+      {/* Header */}
+      <header style={{ background: '#0f0f0f', borderBottom: '1px solid #2a2a2a' }}>
+        <div style={{ maxWidth: 960, margin: '0 auto', padding: '20px 16px 0' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
+            <span style={{ fontSize: 22 }}>🃏</span>
+            <h1 style={{ fontSize: 20, fontWeight: 600, color: '#f5f5f5' }}>Poker Coach</h1>
+            <span style={{ fontSize: 12, color: '#3f3f46', marginLeft: 6 }}>ML.Aspek</span>
+          </div>
+
+          <nav style={{ display: 'flex', overflowX: 'auto', gap: 4 }}>
+            {TABS.map(tab => {
+              const active = activeTab === tab.id
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  style={{
+                    background: 'transparent',
+                    color: active ? '#22c55e' : '#a1a1aa',
+                    border: 'none',
+                    borderBottom: active ? '2px solid #22c55e' : '2px solid transparent',
+                    padding: '10px 14px',
+                    fontSize: 13,
+                    fontWeight: active ? 500 : 400,
+                    cursor: 'pointer',
+                    whiteSpace: 'nowrap',
+                    transition: 'all 0.15s ease',
+                  }}
+                >
+                  {tab.label}
+                </button>
+              )
+            })}
+          </nav>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+      </header>
+
+      {/* Contenu */}
+      <main style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px' }}>
+        {activeTab === 'trainer' && <Trainer />}
+        {activeTab === 'ranges' && <RangeMatrix />}
+        {activeTab === 'pushfold' && <PushFoldChart />}
+        {activeTab === 'equity' && <EquityCalc />}
+        {activeTab === 'strategy' && <PositionStrategy />}
+        {activeTab === 'analyze' && <HandAnalyzer />}
       </main>
     </div>
-  );
+  )
 }
