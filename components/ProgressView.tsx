@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts'
 import { getAnalysisHistory, AnalysisRecord } from '@/lib/supabase'
 
 function formatDate(iso?: string): string {
@@ -10,6 +11,57 @@ function formatDate(iso?: string): string {
   if (isNaN(d.getTime())) return '—'
   const pad = (n: number) => String(n).padStart(2, '0')
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+// Groupe les analyses par jour et calcule le score de chaque jour
+function buildChartData(records: AnalysisRecord[]) {
+  // Filtre uniquement les analyses individuelles (pas globales)
+  const individual = records
+    .filter(r => !r.is_global)
+    .sort((a, b) => new Date(a.created_at!).getTime() - new Date(b.created_at!).getTime())
+
+  if (individual.length === 0) return []
+
+  // Groupe par jour (format DD/MM)
+  const byDay: Record<string, { good: number; total: number }> = {}
+
+  for (const r of individual) {
+    const date = new Date(r.created_at!)
+    const key = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`
+    if (!byDay[key]) byDay[key] = { good: 0, total: 0 }
+    byDay[key].total++
+    if (r.verdict === '✅') byDay[key].good++
+  }
+
+  return Object.entries(byDay).map(([date, { good, total }]) => ({
+    date,
+    score: Math.round((good / total) * 100),
+    total,
+  }))
+}
+
+interface TooltipProps {
+  active?: boolean
+  payload?: Array<{ value: number; payload: { total: number } }>
+  label?: string
+}
+
+function CustomTooltip({ active, payload, label }: TooltipProps) {
+  if (!active || !payload?.length) return null
+  return (
+    <div style={{
+      background: '#1a1a1a', border: '1px solid #2a2a2a',
+      borderRadius: 6, padding: '8px 12px', fontSize: 12,
+    }}>
+      <p style={{ color: '#a1a1aa', marginBottom: 4 }}>{label}</p>
+      <p style={{ color: '#22c55e', fontWeight: 600 }}>
+        Score : {payload[0].value}%
+      </p>
+      <p style={{ color: '#a1a1aa' }}>
+        {payload[0].payload.total} mains analysées
+      </p>
+    </div>
+  )
 }
 
 function VerdictBadge({ verdict, isGlobal }: { verdict: string; isGlobal: boolean }) {
@@ -65,6 +117,9 @@ export default function ProgressView() {
   const goodPct = (good / segTotal) * 100
   const warnPct = (warn / segTotal) * 100
   const badPct = (bad / segTotal) * 100
+
+  // données du graphe d'évolution (par jour)
+  const chartData = buildChartData(records)
 
   if (loading) {
     return (
@@ -128,6 +183,81 @@ export default function ProgressView() {
         <StatCard label="⚠️ Borderline" value={String(warn)} color="#f59e0b" />
         <StatCard label="❌ Erreurs" value={String(bad)} color="#ef4444" />
       </div>
+
+      {/* Graphe d'évolution */}
+      {chartData.length >= 2 && (
+        <div style={{
+          background: '#1a1a1a', border: '1px solid #2a2a2a',
+          borderRadius: 8, padding: '16px 20px', marginBottom: 20,
+        }}>
+          <p style={{
+            fontSize: 12, fontWeight: 500, color: '#a1a1aa',
+            textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 16,
+          }}>
+            Évolution du score
+          </p>
+          <ResponsiveContainer width="100%" height={180}>
+            <LineChart data={chartData} margin={{ top: 4, right: 8, bottom: 0, left: -20 }}>
+              <XAxis
+                dataKey="date"
+                tick={{ fontSize: 11, fill: '#3f3f46' }}
+                axisLine={{ stroke: '#2a2a2a' }}
+                tickLine={false}
+              />
+              <YAxis
+                domain={[0, 100]}
+                tick={{ fontSize: 11, fill: '#3f3f46' }}
+                axisLine={false}
+                tickLine={false}
+                tickFormatter={(v) => `${v}%`}
+              />
+              <Tooltip content={<CustomTooltip />} />
+              <ReferenceLine
+                y={70}
+                stroke="#22c55e"
+                strokeDasharray="4 4"
+                strokeOpacity={0.3}
+                label={{ value: 'Objectif 70%', position: 'right', fontSize: 10, fill: '#22c55e', fillOpacity: 0.5 }}
+              />
+              <ReferenceLine
+                y={50}
+                stroke="#f59e0b"
+                strokeDasharray="4 4"
+                strokeOpacity={0.3}
+              />
+              <Line
+                type="monotone"
+                dataKey="score"
+                stroke="#22c55e"
+                strokeWidth={2}
+                dot={{ fill: '#22c55e', r: 4, strokeWidth: 0 }}
+                activeDot={{ r: 6, fill: '#4ade80' }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+          <div style={{ display: 'flex', gap: 16, marginTop: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 24, height: 2, background: '#22c55e', opacity: 0.4, borderTop: '1px dashed #22c55e' }} />
+              <span style={{ fontSize: 11, color: '#3f3f46' }}>Objectif 70%</span>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <div style={{ width: 24, height: 2, background: '#f59e0b', opacity: 0.4, borderTop: '1px dashed #f59e0b' }} />
+              <span style={{ fontSize: 11, color: '#3f3f46' }}>Seuil 50%</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {chartData.length < 2 && records.filter(r => !r.is_global).length > 0 && (
+        <div style={{
+          background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8,
+          padding: '16px 20px', marginBottom: 20, textAlign: 'center',
+        }}>
+          <p style={{ fontSize: 13, color: '#3f3f46' }}>
+            Analyse des mains sur au moins 2 jours différents pour voir le graphe d&apos;évolution
+          </p>
+        </div>
+      )}
 
       {/* Barre de progression */}
       {total > 0 && (
