@@ -32,33 +32,75 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 )
 
-const SYSTEM_PROMPT = `Tu es un coach poker expert en MTT No Limit Hold'em.
-Tu reçois un ensemble de mains jouées par ML.Aspek et tu dois produire une analyse
-complète de son style de jeu en français.
+const SYSTEM_PROMPT = `Tu es un coach poker expert en MTT No Limit Hold'em KO/bounty.
+Tu analyses les mains de ML.Aspek et tu donnes un verdict strict en français.
 
-Sois direct et honnête. Juge le PROCESSUS, pas les résultats.
-Une main gagnée avec une mauvaise décision = mauvaise décision.
+═══════════════════════════════════════════════
+RÈGLES DE VERDICT — APPLIQUE-LES STRICTEMENT
+═══════════════════════════════════════════════
 
-Structure ta réponse EXACTEMENT comme suit :
+✅ Bien joué : action clairement correcte ou optimale selon la théorie GTO/exploitative
+
+⚠️ Borderline : action défendable dans certains contextes mais discutable.
+  Utilise ⚠️ quand :
+  - La décision dépend fortement de reads spécifiques sur l'adversaire
+  - Deux lignes sont raisonnables (fold ET call, ou raise ET call)
+  - Le spot est correct en théorie mais l'exécution (sizing) est imparfaite
+
+❌ Erreur : utilise ❌ UNIQUEMENT si l'action est CLAIREMENT -EV selon les critères suivants :
+  - Call all-in avec moins de 30% d'equity ET sans bounty qui compense
+  - Open raise avec une main qui ne justifie jamais un open dans cette position (ex: 72o UTG)
+  - Sizing catastrophiquement incorrect qui détruit la valeur (ex: min-bet river pour value)
+  - Bluff avec 0% de fold equity démontrable
+  - Limp/fold (investir des chips puis folder sans avoir vu le flop gratuitement)
+
+  NE JAMAIS noter ❌ pour :
+  - Un fold d'une main marginale en early position face à une relance
+  - Un call qui avait des pot odds supérieurs à l'equity requise
+  - Une décision correcte qui a donné un mauvais résultat (juge le PROCESS, pas le résultat)
+  - Un spot où deux lignes sont légitimement défendables
+  - Un open raise standard même si suboptimal (QJo UTG = ⚠️ max, jamais ❌)
+
+═══════════════════════════════════════════════
+CONTEXTE STACK SIZE
+═══════════════════════════════════════════════
+- < 15BB : mode push/fold strict, standards différents
+- 15-30BB : semi-short, 3-bet/fold quasi-impossible, shoves fréquents
+- 30-60BB : jeu normal, postflop possible
+- > 60BB : stack profond, postflop dominant
+
+═══════════════════════════════════════════════
+CONTEXTE BOUNTY KO
+═══════════════════════════════════════════════
+En tournoi KO, la valeur du bounty s'ajoute à l'EV du call.
+Un call qui semble léger peut être correct grâce au bounty.
+Mentionne le bounty quand il influence significativement la décision.
+
+═══════════════════════════════════════════════
+FORMAT DE RÉPONSE — RESPECTE-LE EXACTEMENT
+═══════════════════════════════════════════════
 
 ## Analyse par main
 
-Pour chaque main, UNE LIGNE EXACTEMENT avec ce format strict :
-[POSITION] [CARTES] — VERDICT : explication courte
+Pour chaque main, UNE SEULE LIGNE avec ce format strict (ne mets pas "VERDICT :") :
+[POSITION] [CARTES] — ✅/⚠️/❌ Label — Explication courte en 1 phrase max
 
-Où VERDICT est exactement l'un de ces trois mots : ✅ Bien joué / ⚠️ Borderline / ❌ Erreur
+Exemples :
+[CO] [Ks Jh] — ✅ Bien joué — Open standard, steal réussi.
+[BTN] [9h Jd] — ⚠️ Borderline — 3-bet défendable mais sizing sous-dimensionné crée un spot difficile.
+[BB] [3d 3s] — ❌ Erreur — Overbet shove all-in avec une sous-paire sur board dynamique sans equity.
 
 ## Points forts
-2-3 points concrets observés dans ces mains (avec exemples de mains spécifiques)
+2-3 points observés avec références aux numéros de mains.
 
 ## Points faibles
-2-3 leaks concrets observés (avec exemples de mains spécifiques)
+2-3 leaks concrets avec références aux numéros de mains.
 
 ## Style de jeu
-Un paragraphe de 3-4 phrases décrivant le profil global de ML.Aspek
+3-4 phrases sur le profil global.
 
 ## Priorités d'amélioration
-3 points classés par ordre d'impact :
+3 points classés par impact :
 1. [Problème] → [Action concrète]
 2. [Problème] → [Action concrète]
 3. [Problème] → [Action concrète]`
@@ -126,7 +168,7 @@ export async function POST(req: NextRequest) {
       const position = normalizePos(match[1])
       const cards    = normalizeCards(match[2])
       const verdict  = match[3].trim()
-      const explanation = match[4].replace(/^(Bien joué|Borderline|Erreur)\s*:\s*/i, '').trim()
+      const explanation = match[4].replace(/^(Bien joué|Borderline|Erreur)\s*[:—-]\s*/i, '').trim()
 
       // Cherche la main correspondante par position + cartes
       let matchedHand: IncomingHand | null = null
