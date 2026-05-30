@@ -397,7 +397,9 @@ export default function HandAnalyzer() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur API')
+      if (data.error) throw new Error(data.error)
       setGlobalAnalysis(data.analysis)
+      if (data.savedHands) console.log(`${data.savedHands} mains sauvegardées`)
       // La sauvegarde (analyse globale + verdicts par main) est faite côté
       // serveur dans /api/analyze-all pour éviter les doublons.
     } catch (e) {
