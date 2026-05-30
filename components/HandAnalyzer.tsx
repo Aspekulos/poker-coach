@@ -398,18 +398,8 @@ export default function HandAnalyzer() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur API')
       setGlobalAnalysis(data.analysis)
-
-      await saveAnalysis({
-        hand_id: 'global-' + Date.now(),
-        cards: '',
-        position: '',
-        level: '',
-        result: '',
-        verdict: 'global',
-        analysis_text: data.analysis,
-        raw_hand: '',
-        is_global: true,
-      })
+      // La sauvegarde (analyse globale + verdicts par main) est faite côté
+      // serveur dans /api/analyze-all pour éviter les doublons.
     } catch (e) {
       setGlobalError(e instanceof Error ? e.message : 'Erreur inconnue')
     } finally {
