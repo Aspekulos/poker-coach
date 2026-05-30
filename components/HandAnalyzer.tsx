@@ -14,6 +14,10 @@ interface Hand {
   myPosition: string
   result: HandResult
   rawText: string
+  stackBB: number        // stack de ML.Aspek en BB au début de la main
+  opponentAction: string // ex: "shove", "raise 3BB", "limp", "raise 6BB"
+  heroAction: string     // ex: "fold", "call", "raise", "shove"
+  potSize: string        // taille du pot au moment de la décision principale
 }
 
 const HERO = 'ML.Aspek'
@@ -67,6 +71,49 @@ function getPosition(offset: number, total: number): string {
   if (fromBtnBackward === 1) return 'CO'
   if (fromBtnBackward === 2) return 'MP'
   return 'EP'
+}
+
+// Stack de ML.Aspek en BB
+// Cherche "Seat X: ML.Aspek (YYYY)" et divise par la BB du niveau
+// La BB est dans la ligne "Level X (ante/SB/BB)"
+function extractStackBB(handText: string): number {
+  const stackMatch = handText.match(/ML\.Aspek \((\d+)\)/)
+  const bbMatch = handText.match(/\((\d+)\/(\d+)\/(\d+)\)/) // ante/SB/BB
+  if (!stackMatch || !bbMatch) return 0
+  const stack = parseInt(stackMatch[1])
+  const bb = parseInt(bbMatch[3])
+  return bb > 0 ? Math.round(stack / bb) : 0
+}
+
+// Action adverse principale (avant la décision de ML.Aspek)
+function extractOpponentAction(handText: string): string {
+  if (handText.includes('is all-in') || handText.includes('All-in')) return 'shove all-in'
+  const raiseMatch = handText.match(/raises to (\d+)/)
+  if (raiseMatch) return `raise à ${raiseMatch[1]}`
+  if (handText.includes('calls')) return 'call'
+  if (handText.includes('checks')) return 'check'
+  return 'inconnu'
+}
+
+// Action de ML.Aspek
+function extractHeroAction(handText: string): string {
+  const lines = handText.split('\n')
+  for (const line of lines) {
+    if (line.includes('ML.Aspek')) {
+      if (line.includes('folds')) return 'fold'
+      if (line.includes('calls')) return 'call'
+      if (line.includes('raises')) return 'raise'
+      if (line.includes('checks')) return 'check'
+      if (line.includes('is all-in')) return 'shove all-in'
+    }
+  }
+  return 'inconnu'
+}
+
+// Taille du pot — lue dans le SUMMARY Winamax ("Total pot XXX")
+function extractPotSize(handText: string): string {
+  const m = handText.match(/Total pot\s+(\d+)/i)
+  return m ? m[1] : '—'
 }
 
 function parseSingleHand(rawText: string): Hand {
@@ -132,7 +179,18 @@ function parseSingleHand(rawText: string): Hand {
     if (/folds/i.test(rawText.split('Dealt to')[1] ?? '')) result = 'folded'
   }
 
-  return { handId, level, myCards, myPosition, result, rawText }
+  return {
+    handId,
+    level,
+    myCards,
+    myPosition,
+    result,
+    rawText,
+    stackBB: extractStackBB(rawText),
+    opponentAction: extractOpponentAction(rawText),
+    heroAction: extractHeroAction(rawText),
+    potSize: extractPotSize(rawText),
+  }
 }
 
 function parseHandHistory(text: string): Hand[] {
@@ -260,7 +318,14 @@ export default function HandAnalyzer() {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ handHistory: hand.rawText }),
+        body: JSON.stringify({
+          handHistory: hand.rawText,
+          handContext: {
+            stackBB: hand.stackBB,
+            opponentAction: hand.opponentAction,
+            heroAction: hand.heroAction,
+          },
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur API')

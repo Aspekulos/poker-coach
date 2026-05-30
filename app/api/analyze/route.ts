@@ -33,15 +33,26 @@ Un seul conseil actionnable très court (max 2 phrases).`
 
 export async function POST(req: NextRequest) {
   try {
-    const { handHistory } = await req.json()
+    const { handHistory, handContext } = await req.json()
     if (!handHistory?.trim()) {
       return NextResponse.json({ error: "Colle un historique de main avant d'analyser." }, { status: 400 })
     }
+    const ctx = handContext ?? { stackBB: 0, opponentAction: 'inconnu', heroAction: 'inconnu' }
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1200,
       system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: `Analyse cette main Winamax :\n\n${handHistory}` }],
+      messages: [{
+        role: 'user',
+        content: `Analyse cette main Winamax :
+
+Stack ML.Aspek : ${ctx.stackBB} BB
+Action adverse : ${ctx.opponentAction}
+Action ML.Aspek : ${ctx.heroAction}
+
+Historique complet :
+${handHistory}`,
+      }],
     })
     const text = response.content[0].type === 'text' ? response.content[0].text : ''
     return NextResponse.json({ analysis: text })

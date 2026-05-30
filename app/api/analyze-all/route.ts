@@ -41,8 +41,15 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Aucune main à analyser.' }, { status: 400 })
     }
 
-    const handsText = hands.map((h: { rawText: string }, i: number) =>
-      `--- MAIN ${i + 1} ---\n${h.rawText}`
+    const handsText = hands.map((h: {
+      rawText: string
+      myPosition?: string
+      myCards?: string
+      stackBB?: number
+      opponentAction?: string
+      heroAction?: string
+    }, i: number) =>
+      `--- MAIN ${i + 1} [${h.myPosition}] [${h.myCards}] Stack: ${h.stackBB}BB | Adverse: ${h.opponentAction} | ML.Aspek: ${h.heroAction} ---\n${h.rawText}`
     ).join('\n\n')
 
     const response = await client.messages.create({
