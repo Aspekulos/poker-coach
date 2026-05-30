@@ -133,7 +133,10 @@ export async function POST(req: NextRequest) {
     }
 
     if (handRecords.length > 0) {
-      await supabase.from('analyses').insert(handRecords)
+      await supabase.from('analyses').upsert(handRecords, {
+        onConflict: 'hand_id',
+        ignoreDuplicates: false
+      })
     }
 
     return NextResponse.json({

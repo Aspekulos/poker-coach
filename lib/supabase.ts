@@ -20,7 +20,12 @@ export interface AnalysisRecord {
 }
 
 export async function saveAnalysis(record: AnalysisRecord) {
-  const { error } = await supabase.from('analyses').insert(record)
+  // upsert sur hand_id : réanalyser une main met à jour son verdict au lieu
+  // de créer un doublon. Les analyses globales ont un hand_id unique
+  // ('global-<timestamp>'), donc elles sont toujours insérées comme nouvelles.
+  const { error } = await supabase
+    .from('analyses')
+    .upsert(record, { onConflict: 'hand_id', ignoreDuplicates: false })
   if (error) console.error('Supabase save error:', error)
 }
 
