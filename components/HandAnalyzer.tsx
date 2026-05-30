@@ -8,7 +8,7 @@ type View = 'upload' | 'list' | 'analysis' | 'global'
 type HandResult = 'won' | 'lost' | 'folded' | 'unknown'
 
 interface Hand {
-  handId: string
+  handId: string | null
   level: string
   myCards: string
   myPosition: string
@@ -147,7 +147,7 @@ function extractPotSize(handText: string): string {
 function parseSingleHand(rawText: string): Hand {
   // HandId
   const handIdMatch = rawText.match(/HandId:\s*#?([\w-]+)/i)
-  const handId = handIdMatch?.[1] ?? '—'
+  const handId = handIdMatch?.[1] ?? null
 
   // Blinds level: prefer "(200/400)" or "(200-400)" inside parentheses
   let level = '—'
@@ -363,7 +363,9 @@ export default function HandAnalyzer() {
       setAnalysis(data.analysis)
 
       await saveAnalysis({
-        hand_id: hand.handId,
+        // Date.now() est OK ici : appelé dans un handler (clic), pas pendant le rendu.
+        // eslint-disable-next-line react-hooks/purity
+        hand_id: hand.handId ?? `hand-${hand.myPosition}-${hand.myCards}-${Date.now()}`,
         cards: hand.myCards,
         position: hand.myPosition,
         level: hand.level,
@@ -572,7 +574,7 @@ export default function HandAnalyzer() {
         >
           {hands.map((hand, i) => (
             <div
-              key={hand.handId + i}
+              key={(hand.handId ?? 'h') + i}
               onClick={() => handleSelectHand(hand)}
               onMouseEnter={(e) => (e.currentTarget.style.background = '#242424')}
               onMouseLeave={(e) => (e.currentTarget.style.background = '#1a1a1a')}

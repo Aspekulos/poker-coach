@@ -214,7 +214,9 @@ export async function POST(req: NextRequest) {
       if (matchedIndex !== -1) usedHandIndices.add(matchedIndex)
 
       handRecords.push({
-        hand_id: matchedHand?.handId || `hand-${Date.now()}-${handRecords.length}`,
+        hand_id: (matchedHand?.handId && matchedHand.handId !== '—')
+          ? matchedHand.handId
+          : `hand-${matchedHand?.myPosition}-${matchedHand?.myCards}-${Date.now()}`,
         // forme lisible pour l'affichage (la variable `cards` normalisée
         // "jhks" ne sert qu'au matching position+cartes ci-dessus)
         cards: matchedHand?.myCards || match[2].trim(),
