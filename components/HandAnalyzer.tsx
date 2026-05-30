@@ -8,7 +8,7 @@ type View = 'upload' | 'list' | 'analysis' | 'global'
 type HandResult = 'won' | 'lost' | 'folded' | 'unknown'
 
 interface Hand {
-  handId: string | null
+  handId: string
   level: string
   myCards: string
   myPosition: string
@@ -144,10 +144,11 @@ function extractPotSize(handText: string): string {
   return potMatch ? potMatch[1] : 'inconnu'
 }
 
-function parseSingleHand(rawText: string): Hand {
+function parseSingleHand(rawText: string, index: number): Hand {
   // HandId
-  const handIdMatch = rawText.match(/HandId:\s*#?([\w-]+)/i)
-  const handId = handIdMatch?.[1] ?? null
+  // Cherche la ligne "HandId: #4781524654697218085-32-1780061393"
+  const handIdMatch = rawText.match(/HandId:\s*#?(\S+)/)
+  const handId = handIdMatch ? handIdMatch[1] : `fallback-${Date.now()}-${index}`
 
   // Blinds level: prefer "(200/400)" or "(200-400)" inside parentheses
   let level = '—'
@@ -225,7 +226,7 @@ function parseHandHistory(text: string): Hand[] {
   // Winamax marker: lines starting with "Winamax Poker"
   const re = /(?=^Winamax Poker.*HandId)/gmi
   const parts = text.split(re).map(p => p.trim()).filter(Boolean)
-  return parts.map(parseSingleHand)
+  return parts.map((part, i) => parseSingleHand(part, i))
 }
 
 function CardBadge({ rawCard }: { rawCard: string }) {
@@ -363,9 +364,7 @@ export default function HandAnalyzer() {
       setAnalysis(data.analysis)
 
       await saveAnalysis({
-        // Date.now() est OK ici : appelé dans un handler (clic), pas pendant le rendu.
-        // eslint-disable-next-line react-hooks/purity
-        hand_id: hand.handId ?? `hand-${hand.myPosition}-${hand.myCards}-${Date.now()}`,
+        hand_id: hand.handId,
         cards: hand.myCards,
         position: hand.myPosition,
         level: hand.level,
@@ -574,7 +573,7 @@ export default function HandAnalyzer() {
         >
           {hands.map((hand, i) => (
             <div
-              key={(hand.handId ?? 'h') + i}
+              key={hand.handId + i}
               onClick={() => handleSelectHand(hand)}
               onMouseEnter={(e) => (e.currentTarget.style.background = '#242424')}
               onMouseLeave={(e) => (e.currentTarget.style.background = '#1a1a1a')}
