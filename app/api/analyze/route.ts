@@ -37,7 +37,7 @@ export async function POST(req: NextRequest) {
     if (!handHistory?.trim()) {
       return NextResponse.json({ error: "Colle un historique de main avant d'analyser." }, { status: 400 })
     }
-    const ctx = handContext ?? { stackBB: 0, opponentAction: 'inconnu', heroAction: 'inconnu' }
+    const ctx = handContext ?? { stackBB: 0, opponentAction: 'inconnu', heroAction: 'inconnu', potSize: 'inconnu' }
     const response = await client.messages.create({
       model: 'claude-sonnet-4-20250514',
       max_tokens: 1200,
@@ -46,9 +46,10 @@ export async function POST(req: NextRequest) {
         role: 'user',
         content: `Analyse cette main Winamax :
 
-Stack ML.Aspek : ${ctx.stackBB} BB
-Action adverse : ${ctx.opponentAction}
-Action ML.Aspek : ${ctx.heroAction}
+Stack ML.Aspek au départ : ${ctx.stackBB}BB
+Action adverse préflop : ${ctx.opponentAction}
+Action ML.Aspek préflop : ${ctx.heroAction}
+Pot final : ${ctx.potSize}
 
 Historique complet :
 ${handHistory}`,

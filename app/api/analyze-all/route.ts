@@ -49,7 +49,7 @@ export async function POST(req: NextRequest) {
       opponentAction?: string
       heroAction?: string
     }, i: number) =>
-      `--- MAIN ${i + 1} [${h.myPosition}] [${h.myCards}] Stack: ${h.stackBB}BB | Adverse: ${h.opponentAction} | ML.Aspek: ${h.heroAction} ---\n${h.rawText}`
+      `--- MAIN ${i + 1} [${h.myPosition}] [${h.myCards}] | Stack: ${h.stackBB}BB | Adverse: ${h.opponentAction} | ML.Aspek: ${h.heroAction} ---\n${h.rawText}`
     ).join('\n\n')
 
     const response = await client.messages.create({

@@ -73,47 +73,75 @@ function getPosition(offset: number, total: number): string {
   return 'EP'
 }
 
-// Stack de ML.Aspek en BB
-// Cherche "Seat X: ML.Aspek (YYYY)" et divise par la BB du niveau
-// La BB est dans la ligne "Level X (ante/SB/BB)"
 function extractStackBB(handText: string): number {
-  const stackMatch = handText.match(/ML\.Aspek \((\d+)\)/)
-  const bbMatch = handText.match(/\((\d+)\/(\d+)\/(\d+)\)/) // ante/SB/BB
-  if (!stackMatch || !bbMatch) return 0
+  // Format: "Seat X: ML.Aspek (20000, 1€ bounty)" ou "ML.Aspek (20000)"
+  const stackMatch = handText.match(/ML\.Aspek \((\d+)/)
+  // Format: "Holdem no limit (40/175/350)" = ante/SB/BB
+  const bbMatch3 = handText.match(/\((\d+)\/(\d+)\/(\d+)\)/)
+  // Format sans ante: "Holdem no limit (175/350)"
+  const bbMatch2 = handText.match(/\((\d+)\/(\d+)\)/)
+
+  if (!stackMatch) return 0
   const stack = parseInt(stackMatch[1])
-  const bb = parseInt(bbMatch[3])
-  return bb > 0 ? Math.round(stack / bb) : 0
+
+  if (bbMatch3) {
+    const bb = parseInt(bbMatch3[3])
+    return bb > 0 ? Math.round(stack / bb) : 0
+  }
+  if (bbMatch2) {
+    const bb = parseInt(bbMatch2[2])
+    return bb > 0 ? Math.round(stack / bb) : 0
+  }
+  return 0
 }
 
-// Action adverse principale (avant la décision de ML.Aspek)
 function extractOpponentAction(handText: string): string {
-  if (handText.includes('is all-in') || handText.includes('All-in')) return 'shove all-in'
-  const raiseMatch = handText.match(/raises to (\d+)/)
-  if (raiseMatch) return `raise à ${raiseMatch[1]}`
-  if (handText.includes('calls')) return 'call'
-  if (handText.includes('checks')) return 'check'
-  return 'inconnu'
-}
+  // Cherche uniquement dans le bloc PRE-FLOP, avant l'action de ML.Aspek
+  const preflopMatch = handText.match(/\*\*\* PRE-FLOP \*\*\*([\s\S]*?)(?:\*\*\* FLOP \*\*\*|\*\*\* SHOW DOWN \*\*\*|\*\*\* SUMMARY \*\*\*)/)
+  if (!preflopMatch) return 'inconnu'
+  const preflop = preflopMatch[1]
 
-// Action de ML.Aspek
-function extractHeroAction(handText: string): string {
-  const lines = handText.split('\n')
+  // Cherche les actions adverses (lignes qui ne contiennent pas ML.Aspek)
+  const lines = preflop.split('\n').filter(l => l.trim() && !l.includes('ML.Aspek'))
+
   for (const line of lines) {
-    if (line.includes('ML.Aspek')) {
-      if (line.includes('folds')) return 'fold'
-      if (line.includes('calls')) return 'call'
-      if (line.includes('raises')) return 'raise'
-      if (line.includes('checks')) return 'check'
-      if (line.includes('is all-in')) return 'shove all-in'
+    if (line.includes('and is all-in') || line.match(/raises \d+ to \d+ and is all-in/)) return 'shove all-in'
+    const raiseMatch = line.match(/raises (\d+) to (\d+)/)
+    if (raiseMatch) return `3-bet à ${raiseMatch[2]}`
+    if (line.includes('calls')) {
+      const callMatch = line.match(/calls (\d+)/)
+      return callMatch ? `call ${callMatch[1]}` : 'call'
     }
   }
-  return 'inconnu'
+  return 'aucune action adverse'
 }
 
-// Taille du pot — lue dans le SUMMARY Winamax ("Total pot XXX")
+function extractHeroAction(handText: string): string {
+  // Cherche uniquement dans PRE-FLOP les lignes ML.Aspek (hors Seat et Dealt)
+  const preflopMatch = handText.match(/\*\*\* PRE-FLOP \*\*\*([\s\S]*?)(?:\*\*\* FLOP \*\*\*|\*\*\* SHOW DOWN \*\*\*|\*\*\* SUMMARY \*\*\*)/)
+  if (!preflopMatch) return 'inconnu'
+
+  const lines = preflopMatch[1].split('\n')
+  for (const line of lines) {
+    if (!line.includes('ML.Aspek')) continue
+    if (line.includes('folds')) return 'fold'
+    if (line.includes('and is all-in')) return 'shove all-in'
+    if (line.includes('calls')) {
+      const m = line.match(/calls (\d+)/)
+      return m ? `call ${m[1]}` : 'call'
+    }
+    if (line.includes('raises')) {
+      const m = line.match(/raises (\d+) to (\d+)/)
+      return m ? `raise à ${m[2]}` : 'raise'
+    }
+    if (line.includes('checks')) return 'check'
+  }
+  return 'fold'
+}
+
 function extractPotSize(handText: string): string {
-  const m = handText.match(/Total pot\s+(\d+)/i)
-  return m ? m[1] : '—'
+  const potMatch = handText.match(/Total pot (\d+)/)
+  return potMatch ? potMatch[1] : 'inconnu'
 }
 
 function parseSingleHand(rawText: string): Hand {
@@ -324,6 +352,7 @@ export default function HandAnalyzer() {
             stackBB: hand.stackBB,
             opponentAction: hand.opponentAction,
             heroAction: hand.heroAction,
+            potSize: hand.potSize,
           },
         }),
       })
