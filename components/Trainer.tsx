@@ -32,17 +32,17 @@ function generateRandomHand(): string {
 
 function buildRFIExplanation(hand: string, position: RFIPosition, correctAction: Action): string {
   if (correctAction === 'raise') {
-    return `Cette main est dans la range d'ouverture ${position}. Raise 2.5BB depuis ${position}.`
+    return `Avec ${hand} depuis ${position}, tu dois ouvrir car cette main fait partie de la range d'ouverture standard (RFI) à cette position.`
   }
-  return `${hand} n'est pas dans la range ${position}. Fold — trop faible pour ouvrir d'ici.`
+  return `Avec ${hand} depuis ${position}, tu dois folder car cette main est trop faible pour ouvrir d'ici (hors range RFI standard).`
 }
 
 function buildPFExplanation(hand: string, position: PushPosition, stackBB: number, isPush: boolean): string {
   const threshold = PUSH_THRESHOLDS[position][stackBB] ?? 0
   if (isPush) {
-    return `À ${stackBB}BB depuis ${position}, ${hand} est dans la range de push Nash (~${threshold.toFixed(0)}% des mains). Jam.`
+    return `Avec ${hand} à ${stackBB}BB depuis ${position}, la stratégie Nash recommande de push car la main a assez d'équité pour un jam rentable (~${threshold.toFixed(0)}% des mains jouables d'ici).`
   }
-  return `À ${stackBB}BB depuis ${position}, ${hand} est en dehors de la range Nash (~${threshold.toFixed(0)}%). Fold — pas assez d'équité.`
+  return `Avec ${hand} à ${stackBB}BB depuis ${position}, la stratégie Nash recommande de folder car la main est hors de la range de jam (~${threshold.toFixed(0)}% des mains).`
 }
 
 function generateSpot(): Spot {
@@ -165,6 +165,11 @@ export default function Trainer() {
 
   const [card1, card2] = handToCards(spot.hand)
   const isCorrect = userAction === spot.correctAction
+
+  // Label de la bonne réponse : RFI → Open/Fold, Push/Fold → Push/Fold
+  const correctAnswer = spot.mode === 'rfi'
+    ? (spot.correctAction === 'raise' ? 'Open' : 'Fold')
+    : (spot.correctAction === 'push' ? 'Push' : 'Fold')
 
   // Position badge color
   const isRFI = spot.mode === 'rfi'
@@ -309,19 +314,41 @@ export default function Trainer() {
               {isCorrect ? '✓ Correct !' : `✗ Incorrect — la bonne action était ${spot.correctAction === 'raise' ? 'Raise' : spot.correctAction === 'push' ? 'Push' : 'Fold'}`}
             </div>
 
-            <div
-              style={{
-                background: '#242424',
-                borderRadius: 8,
-                padding: 14,
-                fontSize: 13,
-                lineHeight: 1.6,
-                color: '#f5f5f5',
-                marginBottom: 14,
-              }}
-            >
-              {spot.explanation}
-            </div>
+            {isCorrect ? (
+              <div
+                style={{
+                  background: '#242424',
+                  borderRadius: 8,
+                  padding: 14,
+                  fontSize: 13,
+                  lineHeight: 1.6,
+                  color: '#f5f5f5',
+                  marginBottom: 14,
+                }}
+              >
+                {spot.explanation}
+              </div>
+            ) : (
+              // Bonne réponse + explication (affiché uniquement sur erreur).
+              // Équivalent inline du snippet Tailwind : bg-gray-800,
+              // border-gray-600, text-green-400, text-gray-300.
+              <div
+                style={{
+                  marginTop: 12,
+                  marginBottom: 14,
+                  padding: 12,
+                  background: '#1f2937',
+                  borderRadius: 8,
+                  border: '1px solid #4b5563',
+                  fontSize: 13,
+                }}
+              >
+                <p style={{ color: '#4ade80', fontWeight: 500, marginBottom: 4 }}>
+                  ✅ Bonne réponse : {correctAnswer}
+                </p>
+                <p style={{ color: '#d1d5db', lineHeight: 1.6 }}>{spot.explanation}</p>
+              </div>
+            )}
 
             <button
               onClick={handleNext}
