@@ -306,6 +306,8 @@ export default function HandAnalyzer() {
   const [globalAnalysis, setGlobalAnalysis] = useState<string | null>(null)
   const [globalLoading, setGlobalLoading] = useState(false)
   const [globalError, setGlobalError] = useState<string | null>(null)
+  const [loadingMessage, setLoadingMessage] = useState('')
+  const loadingTimers = useRef<ReturnType<typeof setTimeout>[]>([])
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || [])
@@ -389,6 +391,15 @@ export default function HandAnalyzer() {
     setGlobalError(null)
     setGlobalAnalysis(null)
     setView('global')
+
+    // Messages de chargement progressifs (l'analyse peut durer 30-60s)
+    setLoadingMessage('Lecture des mains...')
+    loadingTimers.current = [
+      setTimeout(() => setLoadingMessage("Analyse en cours avec l'IA..."), 3000),
+      setTimeout(() => setLoadingMessage('Génération du rapport (peut prendre jusqu\'à 60s)...'), 15000),
+      setTimeout(() => setLoadingMessage("Finalisation de l'analyse..."), 35000),
+    ]
+
     try {
       const res = await fetch('/api/analyze-all', {
         method: 'POST',
@@ -406,6 +417,9 @@ export default function HandAnalyzer() {
       setGlobalError(e instanceof Error ? e.message : 'Erreur inconnue')
     } finally {
       setGlobalLoading(false)
+      loadingTimers.current.forEach(clearTimeout)
+      loadingTimers.current = []
+      setLoadingMessage('')
     }
   }
 
@@ -619,35 +633,48 @@ export default function HandAnalyzer() {
           <div
             style={{
               display: 'flex',
+              flexDirection: 'column',
               alignItems: 'center',
-              gap: 10,
-              color: '#a1a1aa',
-              fontSize: 13,
+              gap: 4,
               padding: 24,
-              justifyContent: 'center',
             }}
           >
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <circle
-                cx="12"
-                cy="12"
-                r="9"
-                stroke="#22c55e"
-                strokeWidth="2.5"
-                strokeDasharray="40 20"
-                strokeLinecap="round"
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, color: '#a1a1aa', fontSize: 13 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <circle
+                  cx="12"
+                  cy="12"
+                  r="9"
+                  stroke="#22c55e"
+                  strokeWidth="2.5"
+                  strokeDasharray="40 20"
+                  strokeLinecap="round"
+                >
+                  <animateTransform
+                    attributeName="transform"
+                    type="rotate"
+                    from="0 12 12"
+                    to="360 12 12"
+                    dur="1s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+              </svg>
+              Analyse de {hands.length} mains en cours…
+            </div>
+            {loadingMessage && (
+              <p
+                style={{
+                  fontSize: 13,
+                  color: '#9ca3af',
+                  marginTop: 8,
+                  textAlign: 'center',
+                  animation: 'poker-pulse 1.8s ease-in-out infinite',
+                }}
               >
-                <animateTransform
-                  attributeName="transform"
-                  type="rotate"
-                  from="0 12 12"
-                  to="360 12 12"
-                  dur="1s"
-                  repeatCount="indefinite"
-                />
-              </circle>
-            </svg>
-            Analyse de {hands.length} mains en cours… (peut prendre 15-20s)
+                ⏳ {loadingMessage}
+              </p>
+            )}
           </div>
         )}
 
