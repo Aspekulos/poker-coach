@@ -20,9 +20,10 @@ const EquityCalc = dynamic(() => import('@/components/EquityCalc'), { ssr: false
 const PositionStrategy = dynamic(() => import('@/components/PositionStrategy'), { ssr: false, loading: Loading })
 const HandAnalyzer = dynamic(() => import('@/components/HandAnalyzer'), { ssr: false, loading: Loading })
 const ProgressView = dynamic(() => import('@/components/ProgressView'), { ssr: false, loading: Loading })
+const PlayerCoach = dynamic(() => import('@/components/PlayerCoach'), { ssr: false, loading: Loading })
 const TableMap = dynamic(() => import('@/components/TableMap'), { ssr: false })
 
-type TabId = 'trainer' | 'ranges' | 'pushfold' | 'equity' | 'strategy' | 'table' | 'analyze' | 'progress'
+type TabId = 'trainer' | 'ranges' | 'pushfold' | 'equity' | 'strategy' | 'table' | 'analyze' | 'progress' | 'coach'
 
 const TABS: { id: TabId; label: string; desc: string }[] = [
   { id: 'trainer',  label: '🎯 Trainer',      desc: 'Quiz interactif' },
@@ -33,6 +34,7 @@ const TABS: { id: TabId; label: string; desc: string }[] = [
   { id: 'table',    label: '🪑 Positions',    desc: 'Repère visuel' },
   { id: 'analyze',  label: '🔍 Analyser',      desc: 'Main Winamax' },
   { id: 'progress', label: '📈 Progression',   desc: 'Historique & stats' },
+  { id: 'coach',    label: '🎓 Mon Coach',     desc: 'Coaching personnalisé' },
 ]
 
 export default function Home() {
@@ -87,6 +89,7 @@ export default function Home() {
         {activeTab === 'table' && <TableMap />}
         {activeTab === 'analyze' && <HandAnalyzer />}
         {activeTab === 'progress' && <ProgressView />}
+        {activeTab === 'coach' && <PlayerCoach />}
       </main>
     </div>
   )
