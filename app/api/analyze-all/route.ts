@@ -101,7 +101,15 @@ export async function POST(req: NextRequest) {
 
     // Normalise les cartes pour la comparaison (retire espaces superflus,
     // lowercase sauf symboles)
-    const normalizeCards = (s: string) => s.replace(/\s+/g, ' ').trim()
+    const normalizeCards = (s: string) =>
+      s
+        .replace(/♠/g, 's').replace(/♥/g, 'h')
+        .replace(/♦/g, 'd').replace(/♣/g, 'c')
+        .toLowerCase()
+        .trim()
+        .split(/\s+/)
+        .sort()
+        .join('')
     const normalizePos = (s: string) => s.trim().toUpperCase()
 
     // Parse les lignes d'analyse de Claude
@@ -153,7 +161,9 @@ export async function POST(req: NextRequest) {
 
       handRecords.push({
         hand_id: matchedHand?.handId || `hand-${Date.now()}-${handRecords.length}`,
-        cards,
+        // forme lisible pour l'affichage (la variable `cards` normalisée
+        // "jhks" ne sert qu'au matching position+cartes ci-dessus)
+        cards: matchedHand?.myCards || match[2].trim(),
         position,
         level:         matchedHand?.level   || '',
         result:        matchedHand?.result  || '',
