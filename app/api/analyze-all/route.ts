@@ -99,36 +99,68 @@ export async function POST(req: NextRequest) {
       is_global: true
     })
 
-    // Parse et sauvegarde chaque main individuellement
-    // Format attendu : [POSITION] [CARTES] — ✅/⚠️/❌ ...
+    // Normalise les cartes pour la comparaison (retire espaces superflus,
+    // lowercase sauf symboles)
+    const normalizeCards = (s: string) => s.replace(/\s+/g, ' ').trim()
+    const normalizePos = (s: string) => s.trim().toUpperCase()
+
+    // Parse les lignes d'analyse de Claude
     const lines = text.split('\n')
     const handRecords: AnalysisInsert[] = []
+    const usedHandIndices = new Set<number>()
 
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[i]
-      // Match les lignes d'analyse de main
-      const match = line.match(/\[([^\]]+)\]\s*\[([^\]]+)\]\s*[—-]\s*(✅|⚠️|❌)(.+)/)
+    for (const line of lines) {
+      const match = line.match(
+        /\[([^\]]+)\]\s*\[([^\]]+)\]\s*[—\-]\s*(✅|⚠️|❌)\s*(.+)/
+      )
       if (!match) continue
 
-      const position = match[1].trim()
-      const cards = match[2].trim()
-      const verdictEmoji = match[3].trim()
-      const explanation = match[4].trim()
+      const position = normalizePos(match[1])
+      const cards    = normalizeCards(match[2])
+      const verdict  = match[3].trim()
+      const explanation = match[4].replace(/^(Bien joué|Borderline|Erreur)\s*:\s*/i, '').trim()
 
-      // Retrouve la main correspondante dans le tableau hands
-      const handIndex = handRecords.length
-      const hand = hands[handIndex]
+      // Cherche la main correspondante par position + cartes
+      let matchedHand: IncomingHand | null = null
+      let matchedIndex = -1
+
+      for (let i = 0; i < hands.length; i++) {
+        if (usedHandIndices.has(i)) continue
+        const h = hands[i]
+        if (
+          normalizePos(h.myPosition) === position &&
+          normalizeCards(h.myCards)  === cards
+        ) {
+          matchedHand  = h
+          matchedIndex = i
+          break
+        }
+      }
+
+      // Si pas de match exact, fallback sur le prochain non utilisé
+      // (cas rare : Claude a reformaté les cartes)
+      if (!matchedHand) {
+        for (let i = 0; i < hands.length; i++) {
+          if (!usedHandIndices.has(i)) {
+            matchedHand  = hands[i]
+            matchedIndex = i
+            break
+          }
+        }
+      }
+
+      if (matchedIndex !== -1) usedHandIndices.add(matchedIndex)
 
       handRecords.push({
-        hand_id: hand?.handId || `hand-${i}`,
+        hand_id: matchedHand?.handId || `hand-${Date.now()}-${handRecords.length}`,
         cards,
         position,
-        level: hand?.level || '',
-        result: hand?.result || '',
-        verdict: verdictEmoji,
+        level:         matchedHand?.level   || '',
+        result:        matchedHand?.result  || '',
+        verdict,
         analysis_text: explanation,
-        raw_hand: hand?.rawText || '',
-        is_global: false
+        raw_hand:      matchedHand?.rawText || '',
+        is_global:     false
       })
     }
 
