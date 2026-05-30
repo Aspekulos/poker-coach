@@ -91,19 +91,31 @@ Exemples :
 [BB] [3d 3s] — ❌ Erreur — Overbet shove all-in avec une sous-paire sur board dynamique sans equity.
 
 ## Points forts
-2-3 points observés avec références aux numéros de mains.
+2-3 points observés. Pour chaque point, cite la main concernée
+sous forme [POSITION][CARTES] (ex: avec [BTN][A♥8♥]).
+Langage simple, accessible à un joueur débutant.
+Pas de jargon technique sans explication entre parenthèses.
 
 ## Points faibles
-2-3 leaks concrets avec références aux numéros de mains.
+2-3 leaks concrets. Pour chaque leak, cite la main concernée
+sous forme [POSITION][CARTES]. Explique le problème en une phrase
+simple du type "tu as fait X alors qu'il fallait faire Y parce que Z".
+Pas de "main 12" ou "hand 38" — toujours les cartes.
 
 ## Style de jeu
-3-4 phrases sur le profil global.
+3 phrases maximum. Langage de coach, pas de manuel technique.
+Exemple : "Tu folds correctement les mauvaises mains mais tu hésites
+trop à attaquer quand tu as un bon jeu."
 
 ## Priorités d'amélioration
-3 points classés par impact :
-1. [Problème] → [Action concrète]
-2. [Problème] → [Action concrète]
-3. [Problème] → [Action concrète]`
+3 priorités classées par ordre d'impact. Format :
+1. Ce que tu fais → Ce qu'il faut faire → Pourquoi en une phrase simple
+2. ...
+3. ...
+
+Toujours éviter : "GTO", "EV", "ICM", "equity" sans explication.
+Préférer : "tes chances de gagner", "le pot à gagner vs chips à risquer",
+"la valeur de la main".`
 
 export async function POST(req: NextRequest) {
   try {

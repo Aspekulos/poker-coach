@@ -677,7 +677,10 @@ export default function HandAnalyzer() {
                 marginTop: 16,
               }}
             >
-              <div className="prose-poker">
+              <div className="prose prose-sm max-w-none text-gray-300
+                              [&>h2]:text-white [&>h2]:font-semibold
+                              [&>h2]:text-base [&>h2]:mt-6 [&>h2]:mb-3
+                              [&>ul]:space-y-1 [&>p]:leading-relaxed">
                 <ReactMarkdown>{globalAnalysis}</ReactMarkdown>
               </div>
             </div>
