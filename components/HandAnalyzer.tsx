@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react'
 import ReactMarkdown from 'react-markdown'
+import { saveAnalysis } from '@/lib/supabase'
 
 type View = 'upload' | 'list' | 'analysis' | 'global'
 type HandResult = 'won' | 'lost' | 'folded' | 'unknown'
@@ -16,6 +17,13 @@ interface Hand {
 }
 
 const HERO = 'ML.Aspek'
+
+function extractVerdict(text: string): string {
+  if (text.includes('✅')) return '✅'
+  if (text.includes('⚠️')) return '⚠️'
+  if (text.includes('❌')) return '❌'
+  return 'unknown'
+}
 
 const POS_COLORS: Record<string, string> = {
   BTN: '#3b82f6',
@@ -244,7 +252,7 @@ export default function HandAnalyzer() {
     }
   }
 
-  const handleAnalyze = async (rawText: string) => {
+  const handleAnalyze = async (hand: Hand) => {
     setLoading(true)
     setError(null)
     setAnalysis(null)
@@ -252,11 +260,23 @@ export default function HandAnalyzer() {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ handHistory: rawText }),
+        body: JSON.stringify({ handHistory: hand.rawText }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur API')
       setAnalysis(data.analysis)
+
+      await saveAnalysis({
+        hand_id: hand.handId,
+        cards: hand.myCards,
+        position: hand.myPosition,
+        level: hand.level,
+        result: hand.result,
+        verdict: extractVerdict(data.analysis),
+        analysis_text: data.analysis,
+        raw_hand: hand.rawText,
+        is_global: false,
+      })
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Erreur inconnue')
     } finally {
@@ -267,7 +287,7 @@ export default function HandAnalyzer() {
   const handleSelectHand = (hand: Hand) => {
     setSelectedHand(hand)
     setView('analysis')
-    handleAnalyze(hand.rawText)
+    handleAnalyze(hand)
   }
 
   const handleAnalyzeAll = async () => {
@@ -284,6 +304,18 @@ export default function HandAnalyzer() {
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur API')
       setGlobalAnalysis(data.analysis)
+
+      await saveAnalysis({
+        hand_id: 'global-' + Date.now(),
+        cards: '',
+        position: '',
+        level: '',
+        result: '',
+        verdict: 'global',
+        analysis_text: data.analysis,
+        raw_hand: '',
+        is_global: true,
+      })
     } catch (e) {
       setGlobalError(e instanceof Error ? e.message : 'Erreur inconnue')
     } finally {

@@ -19,9 +19,10 @@ const Trainer = dynamic(() => import('@/components/Trainer'), { ssr: false, load
 const EquityCalc = dynamic(() => import('@/components/EquityCalc'), { ssr: false, loading: Loading })
 const PositionStrategy = dynamic(() => import('@/components/PositionStrategy'), { ssr: false, loading: Loading })
 const HandAnalyzer = dynamic(() => import('@/components/HandAnalyzer'), { ssr: false, loading: Loading })
+const ProgressView = dynamic(() => import('@/components/ProgressView'), { ssr: false, loading: Loading })
 const TableMap = dynamic(() => import('@/components/TableMap'), { ssr: false })
 
-type TabId = 'trainer' | 'ranges' | 'pushfold' | 'equity' | 'strategy' | 'table' | 'analyze'
+type TabId = 'trainer' | 'ranges' | 'pushfold' | 'equity' | 'strategy' | 'table' | 'analyze' | 'progress'
 
 const TABS: { id: TabId; label: string; desc: string }[] = [
   { id: 'trainer',  label: '🎯 Trainer',      desc: 'Quiz interactif' },
@@ -31,6 +32,7 @@ const TABS: { id: TabId; label: string; desc: string }[] = [
   { id: 'strategy', label: '🧠 Stratégie',    desc: 'Par position' },
   { id: 'table',    label: '🪑 Positions',    desc: 'Repère visuel' },
   { id: 'analyze',  label: '🔍 Analyser',      desc: 'Main Winamax' },
+  { id: 'progress', label: '📈 Progression',   desc: 'Historique & stats' },
 ]
 
 export default function Home() {
@@ -84,6 +86,7 @@ export default function Home() {
         {activeTab === 'strategy' && <PositionStrategy />}
         {activeTab === 'table' && <TableMap />}
         {activeTab === 'analyze' && <HandAnalyzer />}
+        {activeTab === 'progress' && <ProgressView />}
       </main>
     </div>
   )
