@@ -15,6 +15,8 @@ interface Tournament {
   total_players: number | null
   position: number
   gain: number | string
+  gain_placement: number | string
+  gain_bounties: number | string
   type: string
   notes: string | null
 }
@@ -138,7 +140,8 @@ const emptyForm = (today: string) => ({
   buy_in: '',
   total_players: '',
   position: '',
-  gain: '',
+  gain_placement: '',
+  gain_bounties: '',
   type: 'KO',
   notes: '',
 })
@@ -179,10 +182,18 @@ export default function Dashboard() {
     }
     setSubmitting(true)
     try {
+      const gainPlacement = num(form.gain_placement)
+      const gainBounties = num(form.gain_bounties)
+      const payload = {
+        ...form,
+        gain_placement: gainPlacement,
+        gain_bounties: gainBounties,
+        gain: gainPlacement + gainBounties, // gain total = placement + primes KO
+      }
       const res = await fetch('/api/tournaments', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? "Erreur lors de l'enregistrement.")
@@ -363,15 +374,23 @@ export default function Dashboard() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 10, marginBottom: 10 }}>
+          <div style={{ marginBottom: 10 }}>
+            <label style={fieldLabel}>Position finale</label>
+            <input type="number" value={form.position} onChange={set('position')} placeholder="1" style={inputStyle} required />
+          </div>
+
+          <div style={{ display: 'flex', gap: 10, marginBottom: 6 }}>
             <div style={{ flex: 1 }}>
-              <label style={fieldLabel}>Position finale</label>
-              <input type="number" value={form.position} onChange={set('position')} placeholder="1" style={inputStyle} required />
+              <label style={fieldLabel}>Gain placement (prize pool)</label>
+              <input type="number" step="0.01" value={form.gain_placement} onChange={set('gain_placement')} placeholder="0.00" style={inputStyle} />
             </div>
             <div style={{ flex: 1 }}>
-              <label style={fieldLabel}>Gain (€)</label>
-              <input type="number" step="0.01" value={form.gain} onChange={set('gain')} placeholder="0.00" style={inputStyle} />
+              <label style={fieldLabel}>Primes KO gagnées</label>
+              <input type="number" step="0.01" value={form.gain_bounties} onChange={set('gain_bounties')} placeholder="0.00" style={inputStyle} />
             </div>
+          </div>
+          <div style={{ marginBottom: 10, fontSize: 12, color: C.muted }}>
+            Total : <strong style={{ color: C.white }}>{(num(form.gain_placement) + num(form.gain_bounties)).toFixed(2)} €</strong>
           </div>
 
           <div style={{ marginBottom: 10 }}>
@@ -423,6 +442,7 @@ export default function Dashboard() {
                     <th style={{ padding: 6, fontWeight: 500, textAlign: 'right' }}>Buy-in</th>
                     <th style={{ padding: 6, fontWeight: 500, textAlign: 'right' }}>Pos.</th>
                     <th style={{ padding: 6, fontWeight: 500, textAlign: 'right' }}>Gain</th>
+                    <th style={{ padding: 6, fontWeight: 500, textAlign: 'right' }}>Primes</th>
                     <th style={{ padding: 6, fontWeight: 500, textAlign: 'right' }}>Profit</th>
                     <th style={{ padding: 6, fontWeight: 500 }}>Type</th>
                   </tr>
@@ -430,13 +450,17 @@ export default function Dashboard() {
                 <tbody>
                   {recent.map(t => {
                     const profit = num(t.gain) - num(t.buy_in)
+                    const bounties = num(t.gain_bounties)
                     return (
                       <tr key={t.id} style={{ borderTop: `1px solid ${C.border}` }}>
                         <td style={{ padding: '8px 6px 8px 0', color: C.muted, whiteSpace: 'nowrap' }}>{dayMonth(t.played_at)}</td>
                         <td style={{ padding: 6, color: C.white, maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.tournament_name || '—'}</td>
                         <td style={{ padding: 6, textAlign: 'right', color: C.muted }}>{num(t.buy_in).toFixed(2)}</td>
                         <td style={{ padding: 6, textAlign: 'right', color: C.muted }}>{t.position}{t.total_players ? `/${t.total_players}` : ''}</td>
-                        <td style={{ padding: 6, textAlign: 'right', color: C.muted }}>{num(t.gain).toFixed(2)}</td>
+                        <td style={{ padding: 6, textAlign: 'right', color: C.muted }}>{num(t.gain_placement).toFixed(2)}</td>
+                        <td style={{ padding: 6, textAlign: 'right', color: bounties > 0 ? C.green : C.dim, whiteSpace: 'nowrap' }}>
+                          {bounties > 0 ? `🎯 ${bounties.toFixed(2)}` : '—'}
+                        </td>
                         <td style={{ padding: 6, textAlign: 'right', fontWeight: 600, color: profit >= 0 ? C.green : C.red }}>{eur(profit, true)}</td>
                         <td style={{ padding: 6, color: C.dim }}>{t.type}</td>
                       </tr>

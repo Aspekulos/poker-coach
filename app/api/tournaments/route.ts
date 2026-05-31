@@ -32,7 +32,7 @@ export async function GET() {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { played_at, tournament_name, buy_in, total_players, position, gain, type, notes } = body
+    const { played_at, tournament_name, buy_in, total_players, position, gain_placement, gain_bounties, type, notes } = body
 
     // Validation : played_at, buy_in et position sont requis.
     const buyInNum = Number(buy_in)
@@ -53,8 +53,15 @@ export async function POST(req: NextRequest) {
       total_players === undefined || total_players === null || total_players === ''
         ? null
         : Number(total_players)
-    const gainNum =
-      gain === undefined || gain === null || gain === '' ? 0 : Number(gain)
+    // Gain scindé : placement (prize pool) + primes KO. Le gain total stocké
+    // est la somme des deux (calculée ici, indépendamment de ce que le client envoie).
+    const toNum = (v: unknown) => {
+      const n = Number(v)
+      return Number.isFinite(n) ? n : 0
+    }
+    const placementNum = toNum(gain_placement)
+    const bountiesNum = toNum(gain_bounties)
+    const gainNum = placementNum + bountiesNum
 
     const insert = {
       played_at,
@@ -62,7 +69,9 @@ export async function POST(req: NextRequest) {
       buy_in: buyInNum,
       total_players: totalPlayersNum !== null && !Number.isNaN(totalPlayersNum) ? totalPlayersNum : null,
       position: positionNum,
-      gain: Number.isNaN(gainNum) ? 0 : gainNum,
+      gain_placement: placementNum,
+      gain_bounties: bountiesNum,
+      gain: gainNum,
       type: tournamentType,
       notes: notes?.trim() || null,
     }
