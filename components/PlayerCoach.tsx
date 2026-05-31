@@ -142,6 +142,9 @@ function ScoreCircle({ score, size = 120 }: { score: number; size?: number }) {
       <text x="50%" y="84%" dominantBaseline="central" textAnchor="middle" fill="#a1a1aa" fontSize={11}>
         Évaluation coach
       </text>
+      <text x="50%" y="95%" dominantBaseline="central" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize={9}>
+        Estimation Claude
+      </text>
     </svg>
   )
 }
