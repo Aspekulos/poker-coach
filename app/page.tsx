@@ -26,17 +26,20 @@ const TableMap = dynamic(() => import('@/components/TableMap'), { ssr: false })
 
 type TabId = 'dashboard' | 'coach' | 'progress' | 'trainer' | 'ranges' | 'pushfold' | 'equity' | 'strategy' | 'table' | 'analyze'
 
-const NAV: { id: TabId; icon: string; label: string }[] = [
+const NAV_MAIN: { id: TabId; icon: string; label: string }[] = [
   { id: 'dashboard', icon: '📊', label: 'Dashboard' },
+  { id: 'analyze',   icon: '🔍', label: 'Analyser' },
   { id: 'coach',     icon: '🎓', label: 'Mon Coach' },
   { id: 'progress',  icon: '📈', label: 'Progression' },
   { id: 'trainer',   icon: '🎯', label: 'Trainer' },
+]
+
+const NAV_REFS: { id: TabId; icon: string; label: string }[] = [
   { id: 'ranges',    icon: '📋', label: 'Ranges RFI' },
   { id: 'pushfold',  icon: '⚡', label: 'Push/Fold' },
   { id: 'equity',    icon: '⚖️', label: 'Équité' },
   { id: 'strategy',  icon: '🗺️', label: 'Stratégie' },
   { id: 'table',     icon: '📍', label: 'Positions' },
-  { id: 'analyze',   icon: '🔍', label: 'Analyser' },
 ]
 
 export default function Home() {
@@ -80,7 +83,21 @@ export default function Home() {
 
         {/* Navigation */}
         <nav style={{ flex: 1, overflowY: 'auto', paddingTop: 4 }}>
-          {NAV.map(item => (
+          {NAV_MAIN.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              aria-current={activeTab === item.id ? 'page' : undefined}
+              className={`sidebar-item${activeTab === item.id ? ' active' : ''}`}
+            >
+              <span style={{ fontSize: 15, width: 20, textAlign: 'center' }}>{item.icon}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+          <div style={{ padding: '12px 16px 6px', fontSize: 10, color: 'rgba(255,255,255,0.2)', letterSpacing: '0.08em', fontWeight: 600, textTransform: 'uppercase' }}>
+            Références
+          </div>
+          {NAV_REFS.map(item => (
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
