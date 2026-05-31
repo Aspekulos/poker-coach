@@ -286,8 +286,14 @@ export default function Dashboard() {
         <div style={{ background: C.card, border: `1px solid ${C.border}`, borderRadius: 12, padding: '16px 20px' }}>
           <p style={sectionTitle}>Évolution de la bankroll</p>
           {bankroll.length === 0 ? (
-            <div style={{ height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.dim, fontSize: 13 }}>
-              Aucun tournoi enregistré
+            <div style={{ height: 200, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
+              <span style={{ fontSize: 32, opacity: 0.4 }}>🏆</span>
+              <p style={{ color: C.dim, fontSize: 13, textAlign: 'center', margin: 0 }}>
+                Aucun tournoi enregistré
+              </p>
+              <p style={{ color: '#3f3f46', fontSize: 11, textAlign: 'center', margin: 0 }}>
+                Remplis le formulaire à droite pour suivre ta bankroll
+              </p>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height={200}>
