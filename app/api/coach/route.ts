@@ -65,7 +65,11 @@ strengths : exactement 3 points forts. priority_actions : exactement 3 actions c
 
 export async function GET(request: Request) {
   try {
-    const force = new URL(request.url).searchParams.get('force') === 'true'
+    const params = new URL(request.url).searchParams
+    const force = params.get('force') === 'true'
+    // cacheOnly : renvoie le profil en cache s'il existe, sinon une erreur —
+    // sans jamais déclencher de génération Claude (utilisé à l'auto-chargement).
+    const cacheOnly = params.get('cacheOnly') === 'true'
 
     // 1) Nombre de mains individuelles actuelles
     const { count, error: countError } = await supabase
@@ -103,6 +107,12 @@ export async function GET(request: Request) {
           cached: true,
           generated_at: cached.generated_at,
         })
+      }
+
+      // Pas de cache pour ce nombre de mains : en mode cacheOnly on s'arrête
+      // ici (pas d'appel Claude).
+      if (cacheOnly) {
+        return NextResponse.json({ error: 'Aucun profil en cache.' }, { status: 404 })
       }
     }
 

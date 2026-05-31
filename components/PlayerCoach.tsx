@@ -39,7 +39,7 @@ interface CoachProfile {
   priority_actions: string[]
 }
 
-type Status = 'idle' | 'loading' | 'loaded' | 'error'
+type Status = 'idle' | 'initializing' | 'loading' | 'loaded' | 'error'
 type PhaseKey = keyof CoachProfile['tournament_strategy']
 
 const LOADING_MESSAGES = [
@@ -138,7 +138,7 @@ function ScoreCircle({ score, size = 120 }: { score: number; size?: number }) {
 }
 
 export default function PlayerCoach() {
-  const [status, setStatus] = useState<Status>('idle')
+  const [status, setStatus] = useState<Status>('initializing')
   const [profile, setProfile] = useState<CoachProfile | null>(null)
   const [cached, setCached] = useState(false)
   const [generatedAt, setGeneratedAt] = useState<string | null>(null)
@@ -151,6 +151,29 @@ export default function PlayerCoach() {
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current)
     }
+  }, [])
+
+  // Auto-chargement du profil depuis le cache au montage. Requête cacheOnly :
+  // instantanée si un profil existe, aucune génération Claude sinon → retour à 'idle'.
+  useEffect(() => {
+    const loadCachedProfile = async () => {
+      try {
+        const res = await fetch('/api/coach?cacheOnly=true')
+        const data = await res.json()
+        if (data.error) {
+          setStatus('idle')
+          return
+        }
+        const { cached: isCached, generated_at, ...rest } = data
+        setProfile(rest as CoachProfile)
+        setCached(Boolean(isCached))
+        setGeneratedAt(typeof generated_at === 'string' ? generated_at : null)
+        setStatus('loaded')
+      } catch {
+        setStatus('idle')
+      }
+    }
+    loadCachedProfile()
   }, [])
 
   const generate = async (force = false) => {
@@ -205,8 +228,18 @@ export default function PlayerCoach() {
 
   return (
     <div style={{ color: C.white }}>
-      {/* Le bouton de génération n'apparaît que si aucun profil n'est affiché */}
-      {!profile && <div style={{ marginBottom: 20 }}>{generateButton}</div>}
+      {/* Le bouton de génération n'apparaît que si aucun profil n'est affiché
+          (et pas pendant l'auto-chargement initial) */}
+      {!profile && status !== 'initializing' && (
+        <div style={{ marginBottom: 20 }}>{generateButton}</div>
+      )}
+
+      {/* INITIALIZING — chargement simple depuis le cache (quasi instantané) */}
+      {status === 'initializing' && (
+        <div style={{ ...cardStyle, textAlign: 'center', padding: 36, color: C.muted, fontSize: 14 }}>
+          Chargement du profil…
+        </div>
+      )}
 
       {/* LOADING */}
       {status === 'loading' && (
