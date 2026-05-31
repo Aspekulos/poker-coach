@@ -24,6 +24,21 @@ interface AnalysisInsert {
   analysis_text: string
   raw_hand: string
   is_global: boolean
+  played_at: string
+}
+
+// Extrait la date de jeu depuis le texte brut Winamax (timestamp UTC).
+// Ex : "Winamax ... - 2026/05/27 20:14:03 UTC". Fallback : maintenant.
+function extractPlayedAt(rawText?: string): string {
+  if (rawText) {
+    const m = rawText.match(/(\d{4}\/\d{2}\/\d{2} \d{2}:\d{2}:\d{2}) UTC/)
+    if (m) {
+      const iso = m[1].replace(/\//g, '-').replace(' ', 'T') + 'Z'
+      const d = new Date(iso)
+      if (!isNaN(d.getTime())) return d.toISOString()
+    }
+  }
+  return new Date().toISOString()
 }
 
 const client = new Anthropic()
@@ -226,7 +241,8 @@ export async function POST(req: NextRequest) {
         verdict,
         analysis_text: explanation,
         raw_hand:      matchedHand?.rawText || '',
-        is_global:     false
+        is_global:     false,
+        played_at:     extractPlayedAt(matchedHand?.rawText)
       })
     }
 

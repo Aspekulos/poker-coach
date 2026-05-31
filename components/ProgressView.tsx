@@ -13,6 +13,27 @@ function formatDate(iso?: string): string {
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`
 }
 
+interface Session {
+  session_date: string
+  hands_count: number
+}
+
+// Jour de session (UTC) d'un enregistrement — aligné sur DATE(played_at) côté Postgres.
+function sessionKey(iso?: string): string | null {
+  if (!iso) return null
+  const d = new Date(iso)
+  if (isNaN(d.getTime())) return null
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())}`
+}
+
+// "2026-05-27" → "27 mai 2026"
+function formatSessionDate(dateStr: string): string {
+  const d = new Date(dateStr + 'T00:00:00Z')
+  if (isNaN(d.getTime())) return dateStr
+  return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(d)
+}
+
 // Groupe les analyses par jour et calcule le score de chaque jour
 function buildChartData(records: AnalysisRecord[]) {
   // Filtre uniquement les analyses individuelles (pas globales)
@@ -95,15 +116,28 @@ export default function ProgressView() {
   const [records, setRecords] = useState<AnalysisRecord[]>([])
   const [loading, setLoading] = useState(true)
   const [selected, setSelected] = useState<AnalysisRecord | null>(null)
+  const [sessions, setSessions] = useState<Session[]>([])
+  const [sessionFilter, setSessionFilter] = useState<string>('') // '' = toutes les sessions
 
   useEffect(() => {
     getAnalysisHistory()
       .then(setRecords)
       .finally(() => setLoading(false))
+    fetch('/api/sessions')
+      .then(res => res.json())
+      .then(data => { if (Array.isArray(data)) setSessions(data) })
+      .catch(() => {})
   }, [])
 
+  // ─── FILTRE PAR SESSION ───
+  // Sans filtre : comportement actuel (tous les records, globales incluses).
+  // Avec une session : uniquement les mains individuelles jouées ce jour-là.
+  const viewRecords = sessionFilter
+    ? records.filter(r => !r.is_global && sessionKey(r.played_at) === sessionFilter)
+    : records
+
   // ─── STATS (mains uniques uniquement) ───
-  const hands = records.filter(r => !r.is_global)
+  const hands = viewRecords.filter(r => !r.is_global)
   const total = hands.length
   const good = hands.filter(r => r.verdict === '✅').length
   const warn = hands.filter(r => r.verdict === '⚠️').length
@@ -119,7 +153,7 @@ export default function ProgressView() {
   const badPct = (bad / segTotal) * 100
 
   // données du graphe d'évolution (par jour)
-  const chartData = buildChartData(records)
+  const chartData = buildChartData(viewRecords)
 
   if (loading) {
     return (
@@ -176,6 +210,37 @@ export default function ProgressView() {
   // ─── VUE LISTE + STATS ───
   return (
     <div>
+      {/* Sélecteur de session */}
+      {sessions.length > 0 && (
+        <div style={{ marginBottom: 16, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <label htmlFor="session-filter" style={{ fontSize: 12, color: '#a1a1aa' }}>
+            Session
+          </label>
+          <select
+            id="session-filter"
+            value={sessionFilter}
+            onChange={(e) => setSessionFilter(e.target.value)}
+            style={{
+              background: '#1a1a1a',
+              color: '#f5f5f5',
+              border: '1px solid #2a2a2a',
+              borderRadius: 8,
+              padding: '8px 12px',
+              fontSize: 13,
+              cursor: 'pointer',
+              minWidth: 220,
+            }}
+          >
+            <option value="">Toutes les sessions</option>
+            {sessions.map((s) => (
+              <option key={s.session_date} value={s.session_date}>
+                {formatSessionDate(s.session_date)} ({s.hands_count} main{s.hands_count > 1 ? 's' : ''})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
       {/* Stats */}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
         <StatCard label="Score global" value={`${score}%`} color={scoreColor} />
@@ -248,7 +313,7 @@ export default function ProgressView() {
         </div>
       )}
 
-      {chartData.length < 2 && records.filter(r => !r.is_global).length > 0 && (
+      {chartData.length < 2 && hands.length > 0 && (
         <div style={{
           background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 8,
           padding: '16px 20px', marginBottom: 20, textAlign: 'center',
@@ -269,13 +334,15 @@ export default function ProgressView() {
       )}
 
       {/* Liste */}
-      {records.length === 0 ? (
+      {viewRecords.length === 0 ? (
         <div style={{ textAlign: 'center', padding: 40, color: '#a1a1aa', fontSize: 13 }}>
-          Aucune analyse enregistrée pour l’instant. Analyse une main dans l’onglet 🔍 Analyser.
+          {sessionFilter
+            ? 'Aucune main pour cette session.'
+            : 'Aucune analyse enregistrée pour l’instant. Analyse une main dans l’onglet 🔍 Analyser.'}
         </div>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 480, overflowY: 'auto', paddingRight: 4 }}>
-          {records.map((rec, i) => (
+          {viewRecords.map((rec, i) => (
             <div
               key={(rec.id ?? rec.hand_id) + i}
               onClick={() => setSelected(rec)}

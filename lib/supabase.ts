@@ -17,6 +17,7 @@ export interface AnalysisRecord {
   analysis_text: string
   raw_hand: string
   is_global: boolean
+  played_at?: string     // date de jeu réelle (timestamptz), extraite du texte Winamax
 }
 
 export async function saveAnalysis(record: AnalysisRecord) {
