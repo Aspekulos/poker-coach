@@ -129,7 +129,7 @@ function CardVisual({ rank, suit, color }: VisualCard) {
   )
 }
 
-export default function Trainer() {
+function StandardTrainer() {
   const [spot, setSpot] = useState<Spot | null>(null)
   const [answered, setAnswered] = useState(false)
   const [userAction, setUserAction] = useState<Action | null>(null)
@@ -369,6 +369,361 @@ export default function Trainer() {
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Quiz ciblé : questions générées par Claude à partir des
+//  vrais leaks détectés dans le dernier profil Coach.
+// ─────────────────────────────────────────────────────────────
+
+interface QuizQuestion {
+  question: string
+  options: string[]
+  correct: number
+  explanation: string
+  position: string
+  topic: string
+}
+
+type QuizStatus = 'loading' | 'ready' | 'error'
+
+function TargetedQuiz() {
+  const [status, setStatus] = useState<QuizStatus>('loading')
+  const [questions, setQuestions] = useState<QuizQuestion[]>([])
+  const [errorMsg, setErrorMsg] = useState('')
+  const [index, setIndex] = useState(0)
+  const [selected, setSelected] = useState<number | null>(null)
+  const [score, setScore] = useState({ correct: 0, total: 0 })
+
+  const runFetch = async () => {
+    try {
+      const res = await fetch('/api/trainer-context')
+      const data = await res.json()
+      if (!res.ok || data?.error) {
+        throw new Error(data?.error ?? 'Erreur lors du chargement du quiz ciblé.')
+      }
+      if (!Array.isArray(data) || data.length === 0) {
+        throw new Error('Aucune question générée.')
+      }
+      setQuestions(data as QuizQuestion[])
+      setStatus('ready')
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : 'Erreur inconnue')
+      setStatus('error')
+    }
+  }
+
+  // Relance complète (bouton "Réessayer" / "Nouveau quiz") — hors effet.
+  const load = () => {
+    setStatus('loading')
+    setErrorMsg('')
+    setIndex(0)
+    setSelected(null)
+    setScore({ correct: 0, total: 0 })
+    runFetch()
+  }
+
+  // Au montage : l'état initial est déjà 'loading', on lance juste le fetch
+  // (pas de setState synchrone dans l'effet).
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    runFetch()
+  }, [])
+
+  if (status === 'loading') {
+    return (
+      <div
+        style={{
+          background: '#1a1a1a',
+          border: '1px solid #2a2a2a',
+          borderRadius: 12,
+          padding: 40,
+          textAlign: 'center',
+          color: '#a1a1aa',
+          fontSize: 14,
+        }}
+      >
+        Génération de ton quiz ciblé à partir de tes leaks…
+      </div>
+    )
+  }
+
+  if (status === 'error') {
+    // Le cas dominant est l'absence de profil Coach : on guide vers l'onglet.
+    const noProfile = /profil/i.test(errorMsg)
+    return (
+      <div
+        style={{
+          background: 'rgba(245,158,11,0.08)',
+          border: '1px solid rgba(245,158,11,0.4)',
+          borderRadius: 12,
+          padding: 24,
+          textAlign: 'center',
+        }}
+      >
+        <p style={{ color: '#f59e0b', fontSize: 15, fontWeight: 600, marginBottom: 8 }}>
+          Génère d&apos;abord ton profil Coach dans l&apos;onglet 🎓
+        </p>
+        {!noProfile && <p style={{ color: '#a1a1aa', fontSize: 13, marginBottom: 14 }}>{errorMsg}</p>}
+        <button
+          onClick={load}
+          style={{
+            background: 'transparent',
+            color: '#a1a1aa',
+            border: '1px solid #2a2a2a',
+            borderRadius: 6,
+            padding: '6px 12px',
+            fontSize: 12,
+            cursor: 'pointer',
+          }}
+        >
+          Réessayer
+        </button>
+      </div>
+    )
+  }
+
+  const q = questions[index]
+  const answered = selected !== null
+  const isLast = index === questions.length - 1
+  const finished = index >= questions.length
+
+  if (finished || !q) {
+    return (
+      <div
+        style={{
+          background: '#1a1a1a',
+          border: '1px solid #2a2a2a',
+          borderRadius: 12,
+          padding: 32,
+          textAlign: 'center',
+        }}
+      >
+        <p style={{ fontSize: 16, fontWeight: 700, color: '#f5f5f5', marginBottom: 8 }}>
+          Quiz ciblé terminé 🎯
+        </p>
+        <p style={{ fontSize: 14, color: '#a1a1aa', marginBottom: 20 }}>
+          <strong style={{ color: '#22c55e' }}>{score.correct}</strong> / {score.total} bonnes réponses
+        </p>
+        <button
+          onClick={load}
+          style={{
+            background: '#22c55e',
+            color: '#000',
+            border: 'none',
+            borderRadius: 8,
+            padding: '12px 20px',
+            fontSize: 14,
+            fontWeight: 600,
+            cursor: 'pointer',
+          }}
+        >
+          Nouveau quiz ciblé
+        </button>
+      </div>
+    )
+  }
+
+  const handleAnswer = (i: number) => {
+    if (answered) return
+    setSelected(i)
+    setScore(s => ({
+      correct: s.correct + (i === q.correct ? 1 : 0),
+      total: s.total + 1,
+    }))
+  }
+
+  const handleNext = () => {
+    setIndex(i => i + 1)
+    setSelected(null)
+  }
+
+  const isCorrect = selected === q.correct
+
+  return (
+    <div>
+      {/* Header : progression + score */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        <span style={{ fontSize: 13, color: '#a1a1aa' }}>
+          Question {index + 1} / {questions.length}
+        </span>
+        <span style={{ fontSize: 13, color: '#a1a1aa' }}>
+          <strong style={{ color: '#22c55e' }}>{score.correct}</strong> / {score.total} bonnes réponses
+        </span>
+      </div>
+
+      <div
+        style={{
+          background: '#1a1a1a',
+          border: '1px solid #2a2a2a',
+          borderRadius: 12,
+          padding: 24,
+        }}
+      >
+        {/* Badges : leak ciblé + position */}
+        <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+          <span
+            style={{
+              background: 'rgba(168,85,247,0.15)',
+              color: '#a855f7',
+              padding: '4px 10px',
+              borderRadius: 4,
+              fontSize: 12,
+              fontWeight: 500,
+            }}
+          >
+            Leak : {q.topic}
+          </span>
+          {q.position && (
+            <span
+              style={{
+                background: 'rgba(59,130,246,0.15)',
+                color: '#3b82f6',
+                padding: '4px 10px',
+                borderRadius: 4,
+                fontSize: 12,
+                fontWeight: 500,
+              }}
+            >
+              {q.position}
+            </span>
+          )}
+        </div>
+
+        {/* Question */}
+        <p style={{ fontSize: 16, fontWeight: 600, color: '#f5f5f5', lineHeight: 1.5, marginBottom: 18 }}>
+          {q.question}
+        </p>
+
+        {/* Options */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: answered ? 16 : 0 }}>
+          {q.options.map((opt, i) => {
+            let bg = 'rgba(255,255,255,0.03)'
+            let border = '1px solid #2a2a2a'
+            let color = '#f5f5f5'
+            if (answered) {
+              if (i === q.correct) {
+                bg = 'rgba(34,197,94,0.15)'
+                border = '1px solid rgba(34,197,94,0.5)'
+                color = '#22c55e'
+              } else if (i === selected) {
+                bg = 'rgba(239,68,68,0.12)'
+                border = '1px solid rgba(239,68,68,0.5)'
+                color = '#ef4444'
+              }
+            }
+            return (
+              <button
+                key={i}
+                onClick={() => handleAnswer(i)}
+                disabled={answered}
+                style={{
+                  background: bg,
+                  border,
+                  color,
+                  borderRadius: 8,
+                  padding: '12px 14px',
+                  fontSize: 14,
+                  textAlign: 'left',
+                  cursor: answered ? 'default' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                <span style={{ fontWeight: 700, opacity: 0.7 }}>{String.fromCharCode(65 + i)}</span>
+                <span>{opt}</span>
+                {answered && i === q.correct && <span style={{ marginLeft: 'auto' }}>✓</span>}
+                {answered && i === selected && i !== q.correct && <span style={{ marginLeft: 'auto' }}>✗</span>}
+              </button>
+            )
+          })}
+        </div>
+
+        {/* Explication + suite */}
+        {answered && (
+          <div>
+            <div
+              style={{
+                background: '#242424',
+                borderLeft: `3px solid ${isCorrect ? '#22c55e' : '#ef4444'}`,
+                borderRadius: 8,
+                padding: 14,
+                fontSize: 13,
+                lineHeight: 1.6,
+                color: '#d1d5db',
+                marginBottom: 14,
+              }}
+            >
+              <p style={{ color: isCorrect ? '#4ade80' : '#ef4444', fontWeight: 600, marginBottom: 4 }}>
+                {isCorrect ? '✓ Correct !' : `✗ Incorrect — bonne réponse : ${String.fromCharCode(65 + q.correct)}`}
+              </p>
+              {q.explanation}
+            </div>
+            <button
+              onClick={handleNext}
+              style={{
+                width: '100%',
+                background: '#22c55e',
+                color: '#000',
+                border: 'none',
+                borderRadius: 8,
+                padding: 12,
+                fontSize: 14,
+                fontWeight: 600,
+                cursor: 'pointer',
+              }}
+            >
+              {isLast ? 'Voir le résultat →' : 'Question suivante →'}
+            </button>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Wrapper : bascule entre quiz standard et quiz ciblé.
+// ─────────────────────────────────────────────────────────────
+
+type QuizMode = 'standard' | 'targeted'
+
+export default function Trainer() {
+  const [mode, setMode] = useState<QuizMode>('standard')
+
+  const tab = (value: QuizMode, label: string) => {
+    const active = mode === value
+    return (
+      <button
+        onClick={() => setMode(value)}
+        style={{
+          background: active ? 'rgba(34,197,94,0.15)' : 'transparent',
+          color: active ? '#22c55e' : '#a1a1aa',
+          border: `1px solid ${active ? 'rgba(34,197,94,0.4)' : '#2a2a2a'}`,
+          borderRadius: 8,
+          padding: '8px 14px',
+          fontSize: 13,
+          fontWeight: active ? 600 : 400,
+          cursor: 'pointer',
+        }}
+      >
+        {label}
+      </button>
+    )
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 16, flexWrap: 'wrap' }}>
+        {tab('standard', 'Quiz standard')}
+        {tab('targeted', '🎯 Ciblé sur mes leaks')}
+      </div>
+
+      {mode === 'standard' ? <StandardTrainer /> : <TargetedQuiz />}
     </div>
   )
 }
