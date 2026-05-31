@@ -347,7 +347,7 @@ export default function PlayerCoach() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 18 }}>
               {/* Points forts */}
               <div>
-                <p style={sectionTitle}>💪 Points forts</p>
+                <p style={sectionTitle}>Points forts</p>
                 <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 }}>
                   {profile.strengths.map((s, i) => (
                     <li key={i} style={{ display: 'flex', gap: 8, fontSize: 13, lineHeight: 1.5 }}>
@@ -360,7 +360,7 @@ export default function PlayerCoach() {
 
               {/* Leaks prioritaires */}
               <div>
-                <p style={sectionTitle}>🎯 Leaks prioritaires</p>
+                <p style={sectionTitle}>Leaks prioritaires</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                   {profile.priority_leaks.map((leak, i) => (
                     <div
