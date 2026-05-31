@@ -13,6 +13,7 @@ const Loading = () => (
   </div>
 )
 
+const Dashboard = dynamic(() => import('@/components/Dashboard'), { ssr: false, loading: Loading })
 const RangeMatrix = dynamic(() => import('@/components/RangeMatrix'), { ssr: false, loading: Loading })
 const PushFoldChart = dynamic(() => import('@/components/PushFoldChart'), { ssr: false, loading: Loading })
 const Trainer = dynamic(() => import('@/components/Trainer'), { ssr: false, loading: Loading })
@@ -23,9 +24,10 @@ const ProgressView = dynamic(() => import('@/components/ProgressView'), { ssr: f
 const PlayerCoach = dynamic(() => import('@/components/PlayerCoach'), { ssr: false, loading: Loading })
 const TableMap = dynamic(() => import('@/components/TableMap'), { ssr: false })
 
-type TabId = 'trainer' | 'ranges' | 'pushfold' | 'equity' | 'strategy' | 'table' | 'analyze' | 'progress' | 'coach'
+type TabId = 'dashboard' | 'trainer' | 'ranges' | 'pushfold' | 'equity' | 'strategy' | 'table' | 'analyze' | 'progress' | 'coach'
 
 const TABS: { id: TabId; label: string; desc: string }[] = [
+  { id: 'dashboard', label: '📊 Dashboard',    desc: 'Tournois & bankroll' },
   { id: 'trainer',  label: '🎯 Trainer',      desc: 'Quiz interactif' },
   { id: 'ranges',   label: '📊 Ranges RFI',   desc: "Grille d'ouvertures" },
   { id: 'pushfold', label: '⚡ Push/Fold',     desc: 'Nash < 15BB' },
@@ -38,7 +40,7 @@ const TABS: { id: TabId; label: string; desc: string }[] = [
 ]
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState<TabId>('table')
+  const [activeTab, setActiveTab] = useState<TabId>('dashboard')
 
   return (
     <div style={{ minHeight: '100vh', background: '#0f0f0f' }}>
@@ -81,6 +83,7 @@ export default function Home() {
 
       {/* Contenu */}
       <main style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px' }}>
+        {activeTab === 'dashboard' && <Dashboard />}
         {activeTab === 'trainer' && <Trainer />}
         {activeTab === 'ranges' && <RangeMatrix />}
         {activeTab === 'pushfold' && <PushFoldChart />}

@@ -29,3 +29,17 @@ body {
 /* Card suit colors */
 .suit-hearts, .suit-diamonds { color: #ef4444; }
 .suit-spades, .suit-clubs { color: #f5f5f5; }
+
+/* Carte avec léger relief 3D (utilisée par le Dashboard) */
+.card-3d {
+  background: linear-gradient(145deg, #1d1d1d, #151515);
+  border: 1px solid #2a2a2a;
+  border-radius: 12px;
+  padding: 16px 18px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.card-3d:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
