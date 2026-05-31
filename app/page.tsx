@@ -2,6 +2,19 @@
 
 import { useState } from 'react'
 import dynamic from 'next/dynamic'
+import {
+  LayoutDashboard,
+  Upload,
+  BrainCircuit,
+  TrendingUp,
+  Dumbbell,
+  Grid3X3,
+  Zap,
+  Scale,
+  Map,
+  MapPin,
+  Spade,
+} from 'lucide-react'
 
 const Loading = () => (
   <div style={{ display: 'flex', justifyContent: 'center', padding: 40 }}>
@@ -26,20 +39,22 @@ const TableMap = dynamic(() => import('@/components/TableMap'), { ssr: false })
 
 type TabId = 'dashboard' | 'coach' | 'progress' | 'trainer' | 'ranges' | 'pushfold' | 'equity' | 'strategy' | 'table' | 'analyze'
 
-const NAV_MAIN: { id: TabId; icon: string; label: string }[] = [
-  { id: 'dashboard', icon: '📊', label: 'Dashboard' },
-  { id: 'analyze',   icon: '🔍', label: 'Analyser' },
-  { id: 'coach',     icon: '🎓', label: 'Mon Coach' },
-  { id: 'progress',  icon: '📈', label: 'Progression' },
-  { id: 'trainer',   icon: '🎯', label: 'Trainer' },
+type NavIcon = React.ComponentType<{ size?: number; strokeWidth?: number }>
+
+const NAV_MAIN: { id: TabId; icon: NavIcon; label: string }[] = [
+  { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+  { id: 'analyze',   icon: Upload,          label: 'Analyser' },
+  { id: 'coach',     icon: BrainCircuit,    label: 'Mon Coach' },
+  { id: 'progress',  icon: TrendingUp,      label: 'Progression' },
+  { id: 'trainer',   icon: Dumbbell,        label: 'Trainer' },
 ]
 
-const NAV_REFS: { id: TabId; icon: string; label: string }[] = [
-  { id: 'ranges',    icon: '📋', label: 'Ranges RFI' },
-  { id: 'pushfold',  icon: '⚡', label: 'Push/Fold' },
-  { id: 'equity',    icon: '⚖️', label: 'Équité' },
-  { id: 'strategy',  icon: '🗺️', label: 'Stratégie' },
-  { id: 'table',     icon: '📍', label: 'Positions' },
+const NAV_REFS: { id: TabId; icon: NavIcon; label: string }[] = [
+  { id: 'ranges',   icon: Grid3X3, label: 'Ranges RFI' },
+  { id: 'pushfold', icon: Zap,     label: 'Push/Fold' },
+  { id: 'equity',   icon: Scale,   label: 'Équité' },
+  { id: 'strategy', icon: Map,     label: 'Stratégie' },
+  { id: 'table',    icon: MapPin,  label: 'Positions' },
 ]
 
 export default function Home() {
@@ -60,23 +75,32 @@ export default function Home() {
         }}
       >
         {/* Logo + badge joueur */}
-        <div style={{ padding: '20px 16px 18px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-            <span style={{ fontSize: 20 }}>🃏</span>
-            <h1 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>Poker Coach</h1>
-          </div>
-          <span
-            style={{
-              display: 'inline-block',
-              background: 'rgba(34,197,94,0.12)',
-              color: '#22c55e',
-              border: '1px solid rgba(34,197,94,0.3)',
+        <div style={{ padding: '18px 16px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <div style={{
+              width: 28, height: 28,
+              background: 'var(--green-dim)',
+              border: '1px solid var(--green-border)',
               borderRadius: 6,
-              padding: '3px 9px',
-              fontSize: 11,
-              fontWeight: 600,
-            }}
-          >
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <Spade size={14} strokeWidth={2} color="var(--green)" />
+            </div>
+            <h1 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+              Poker Coach
+            </h1>
+          </div>
+          <span style={{
+            display: 'inline-block',
+            background: 'var(--green-dim)',
+            color: 'var(--green)',
+            border: '1px solid var(--green-border)',
+            borderRadius: 'var(--radius-sm)',
+            padding: '3px 8px',
+            fontSize: 11,
+            fontWeight: 600,
+            letterSpacing: '0.02em',
+          }}>
             ML.Aspek
           </span>
         </div>
@@ -90,7 +114,7 @@ export default function Home() {
               aria-current={activeTab === item.id ? 'page' : undefined}
               className={`sidebar-item${activeTab === item.id ? ' active' : ''}`}
             >
-              <span style={{ fontSize: 15, width: 20, textAlign: 'center' }}>{item.icon}</span>
+              <item.icon size={15} strokeWidth={1.75} />
               <span>{item.label}</span>
             </button>
           ))}
@@ -104,7 +128,7 @@ export default function Home() {
               aria-current={activeTab === item.id ? 'page' : undefined}
               className={`sidebar-item${activeTab === item.id ? ' active' : ''}`}
             >
-              <span style={{ fontSize: 15, width: 20, textAlign: 'center' }}>{item.icon}</span>
+              <item.icon size={15} strokeWidth={1.75} />
               <span>{item.label}</span>
             </button>
           ))}
