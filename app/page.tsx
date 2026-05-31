@@ -96,9 +96,12 @@ export default function Home() {
               borderRadius: 7,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
-                <path d="M12 2C6 2 4 7 4 12s2 10 8 10 8-5 8-10S18 2 12 2z"/>
-                <path d="M12 6v6l4 4"/>
+              <svg width="13" height="13" viewBox="0 0 100 100" fill="#22c55e">
+                <path d="M50 5 C50 5 10 35 10 58 C10 75 25 82 38 76
+                         C34 85 28 90 20 92 L80 92
+                         C72 90 66 85 62 76
+                         C75 82 90 75 90 58
+                         C90 35 50 5 50 5 Z"/>
               </svg>
             </div>
             <h1 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>

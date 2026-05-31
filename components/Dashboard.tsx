@@ -323,9 +323,9 @@ export default function Dashboard() {
   const recent = tournaments.slice(0, 10)
 
   return (
-    <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-start', color: C.text }}>
-      {/* ───────────── COLONNE GAUCHE (≈65%) ───────────── */}
-      <div style={{ flexGrow: 1, flexBasis: 560, minWidth: 300, display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', gap: 20, alignItems: 'flex-start', color: C.text }}>
+      {/* ───────────── COLONNE GAUCHE ───────────── */}
+      <div style={{ flex: '1 1 0', minWidth: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
         {/* Rangée 1 : 4 stat cards */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 12 }}>
           <StatCard
@@ -476,8 +476,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ───────────── COLONNE DROITE (≈35%) ───────────── */}
-      <div style={{ flexGrow: 1, flexBasis: 300, minWidth: 260, display: 'flex', flexDirection: 'column', gap: 16 }}>
+      {/* ───────────── COLONNE DROITE ───────────── */}
+      <div style={{ width: 300, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 14 }}>
         {/* Formulaire */}
         <form onSubmit={handleSubmit} style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: 18 }}>
           <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 14 }}>Ajouter un tournoi</p>
