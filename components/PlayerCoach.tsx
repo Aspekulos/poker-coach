@@ -139,6 +139,9 @@ function ScoreCircle({ score, size = 120 }: { score: number; size?: number }) {
       <text x="50%" y="68%" dominantBaseline="central" textAnchor="middle" fill={C.muted} fontSize={size * 0.1}>
         / 100
       </text>
+      <text x="50%" y="84%" dominantBaseline="central" textAnchor="middle" fill="#a1a1aa" fontSize={11}>
+        Évaluation coach
+      </text>
     </svg>
   )
 }
@@ -407,7 +410,7 @@ export default function PlayerCoach() {
                     }}
                   >
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 8 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700 }}>{pos}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700 }}>{pos === '?' ? 'Inconnue' : pos}</span>
                       <span style={{ fontSize: 15, fontWeight: 700, color: scoreColor(p.score) }}>{p.score}%</span>
                     </div>
                     <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', marginBottom: 8 }}>

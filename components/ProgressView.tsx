@@ -34,31 +34,28 @@ function formatSessionDate(dateStr: string): string {
   return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(d)
 }
 
-// Groupe les analyses par jour et calcule le score de chaque jour
+// Groupe les analyses par jour de session (played_at) et calcule le score du jour.
+// On utilise played_at (vraie date de jeu) et NON created_at (date d'import) :
+// sinon toutes les mains importées le même jour tombent dans un seul bucket.
 function buildChartData(records: AnalysisRecord[]) {
-  // Filtre uniquement les analyses individuelles (pas globales)
-  const individual = records
-    .filter(r => !r.is_global)
-    .sort((a, b) => new Date(a.created_at!).getTime() - new Date(b.created_at!).getTime())
-
-  if (individual.length === 0) return []
-
-  // Groupe par jour (format DD/MM)
   const byDay: Record<string, { good: number; total: number }> = {}
 
-  for (const r of individual) {
-    const date = new Date(r.created_at!)
-    const key = `${date.getDate().toString().padStart(2, '0')}/${(date.getMonth() + 1).toString().padStart(2, '0')}`
+  records.filter(r => !r.is_global).forEach(r => {
+    const key = sessionKey(r.played_at)
+    if (!key) return // ignore les mains sans date de session
     if (!byDay[key]) byDay[key] = { good: 0, total: 0 }
     byDay[key].total++
     if (r.verdict === '✅') byDay[key].good++
-  }
+  })
 
-  return Object.entries(byDay).map(([date, { good, total }]) => ({
-    date,
-    score: Math.round((good / total) * 100),
-    total,
-  }))
+  // Clés au format "YYYY-MM-DD" → tri lexicographique = ordre chronologique
+  return Object.entries(byDay)
+    .sort((a, b) => a[0].localeCompare(b[0]))
+    .map(([date, { good, total }]) => ({
+      date,
+      score: Math.round((good / total) * 100),
+      total,
+    }))
 }
 
 interface TooltipProps {
@@ -74,7 +71,9 @@ function CustomTooltip({ active, payload, label }: TooltipProps) {
       background: '#1a1a1a', border: '1px solid #2a2a2a',
       borderRadius: 6, padding: '8px 12px', fontSize: 12,
     }}>
-      <p style={{ color: '#a1a1aa', marginBottom: 4 }}>{label}</p>
+      <p style={{ color: '#a1a1aa', marginBottom: 4 }}>
+        {label ? (() => { const p = label.split('-'); return p[2] + '/' + p[1] })() : ''}
+      </p>
       <p style={{ color: '#22c55e', fontWeight: 600 }}>
         Score : {payload[0].value}%
       </p>
@@ -243,7 +242,7 @@ export default function ProgressView() {
 
       {/* Stats */}
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16 }}>
-        <StatCard label="Score global" value={`${score}%`} color={scoreColor} />
+        <StatCard label="Score décisions" value={`${score}%`} color={scoreColor} />
         <StatCard label="✅ Bien joué" value={String(good)} color="#22c55e" />
         <StatCard label="⚠️ Borderline" value={String(warn)} color="#f59e0b" />
         <StatCard label="❌ Erreurs" value={String(bad)} color="#ef4444" />
@@ -266,6 +265,7 @@ export default function ProgressView() {
               <CartesianGrid stroke="rgba(255,255,255,0.05)" strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="date"
+                tickFormatter={(val) => { const p = val.split('-'); return p[2] + '/' + p[1] }}
                 tick={{ fontSize: 11, fill: '#3f3f46' }}
                 axisLine={{ stroke: '#2a2a2a' }}
                 tickLine={false}
