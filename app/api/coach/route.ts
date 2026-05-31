@@ -157,12 +157,18 @@ export async function GET(request: Request) {
       .join('\n')
 
     const fmt = (r: AnalysisRow) =>
-      `[${r.position ?? '?'}] [${r.cards ?? '?'}]${r.level ? ` (${r.level})` : ''} — ${r.analysis_text ?? ''}`
+      `[${r.position ?? '?'}] [${r.cards ?? '?'}]${r.level ? ` (${r.level})` : ''} — ${(r.analysis_text ?? '').slice(0, 120)}`
 
-    const problems = rows
-      .filter(r => r.verdict === '⚠️' || r.verdict === '❌')
+    // Erreurs critiques en priorité, max 15 au total
+    const errors = rows
+      .filter(r => r.verdict === '❌')
+      .slice(0, 8)
       .map(fmt)
-      .join('\n')
+    const warnings = rows
+      .filter(r => r.verdict === '⚠️')
+      .slice(0, 7)
+      .map(fmt)
+    const problems = [...errors, ...warnings].join('\n')
 
     const goodMoves = rows
       .filter(r => r.verdict === '✅')
@@ -184,7 +190,7 @@ Produis le profil de coaching JSON.`
     // d) Appel Claude
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 3000,
+      max_tokens: 4000,
       system: SYSTEM_PROMPT,
       messages: [{ role: 'user', content: userContent }],
     })
