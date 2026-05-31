@@ -109,7 +109,13 @@ function ScoreCircle({ score, size = 120 }: { score: number; size?: number }) {
   const stroke = 9
   const r = (size - stroke) / 2
   const circ = 2 * Math.PI * r
-  const offset = circ * (1 - Math.max(0, Math.min(100, score)) / 100)
+  // Animation de tracé : on part de 0 puis on transitionne vers le score réel.
+  const [shown, setShown] = useState(0)
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setShown(score))
+    return () => cancelAnimationFrame(id)
+  }, [score])
+  const offset = circ * (1 - Math.max(0, Math.min(100, shown)) / 100)
   const color = scoreColor(score)
   return (
     <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`}>

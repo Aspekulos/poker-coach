@@ -24,75 +24,95 @@ const ProgressView = dynamic(() => import('@/components/ProgressView'), { ssr: f
 const PlayerCoach = dynamic(() => import('@/components/PlayerCoach'), { ssr: false, loading: Loading })
 const TableMap = dynamic(() => import('@/components/TableMap'), { ssr: false })
 
-type TabId = 'dashboard' | 'trainer' | 'ranges' | 'pushfold' | 'equity' | 'strategy' | 'table' | 'analyze' | 'progress' | 'coach'
+type TabId = 'dashboard' | 'coach' | 'progress' | 'trainer' | 'ranges' | 'pushfold' | 'equity' | 'strategy' | 'table' | 'analyze'
 
-const TABS: { id: TabId; label: string; desc: string }[] = [
-  { id: 'dashboard', label: '📊 Dashboard',    desc: 'Tournois & bankroll' },
-  { id: 'trainer',  label: '🎯 Trainer',      desc: 'Quiz interactif' },
-  { id: 'ranges',   label: '📊 Ranges RFI',   desc: "Grille d'ouvertures" },
-  { id: 'pushfold', label: '⚡ Push/Fold',     desc: 'Nash < 15BB' },
-  { id: 'equity',   label: '🎲 Équité',        desc: 'Calculateur' },
-  { id: 'strategy', label: '🧠 Stratégie',    desc: 'Par position' },
-  { id: 'table',    label: '🪑 Positions',    desc: 'Repère visuel' },
-  { id: 'analyze',  label: '🔍 Analyser',      desc: 'Main Winamax' },
-  { id: 'progress', label: '📈 Progression',   desc: 'Historique & stats' },
-  { id: 'coach',    label: '🎓 Mon Coach',     desc: 'Coaching personnalisé' },
+const NAV: { id: TabId; icon: string; label: string }[] = [
+  { id: 'dashboard', icon: '📊', label: 'Dashboard' },
+  { id: 'coach',     icon: '🎓', label: 'Mon Coach' },
+  { id: 'progress',  icon: '📈', label: 'Progression' },
+  { id: 'trainer',   icon: '🎯', label: 'Trainer' },
+  { id: 'ranges',    icon: '📋', label: 'Ranges RFI' },
+  { id: 'pushfold',  icon: '⚡', label: 'Push/Fold' },
+  { id: 'equity',    icon: '⚖️', label: 'Équité' },
+  { id: 'strategy',  icon: '🗺️', label: 'Stratégie' },
+  { id: 'table',     icon: '📍', label: 'Positions' },
+  { id: 'analyze',   icon: '🔍', label: 'Analyser' },
 ]
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard')
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f0f0f' }}>
-      {/* Header */}
-      <header style={{ background: '#0f0f0f', borderBottom: '1px solid #2a2a2a' }}>
-        <div style={{ maxWidth: 960, margin: '0 auto', padding: '20px 16px 0' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 16 }}>
-            <span style={{ fontSize: 22 }}>🃏</span>
-            <h1 style={{ fontSize: 20, fontWeight: 600, color: '#f5f5f5' }}>Poker Coach</h1>
-            <span style={{ fontSize: 12, color: '#3f3f46', marginLeft: 6 }}>ML.Aspek</span>
+    <div style={{ display: 'flex', height: '100vh', background: 'var(--bg-base)' }}>
+      {/* ───────────── Sidebar ───────────── */}
+      <aside
+        style={{
+          width: 220,
+          flexShrink: 0,
+          height: '100vh',
+          background: '#0a0a0f',
+          borderRight: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex',
+          flexDirection: 'column',
+        }}
+      >
+        {/* Logo + badge joueur */}
+        <div style={{ padding: '20px 16px 18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+            <span style={{ fontSize: 20 }}>🃏</span>
+            <h1 style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>Poker Coach</h1>
           </div>
-
-          <nav style={{ display: 'flex', overflowX: 'auto', gap: 4 }}>
-            {TABS.map(tab => {
-              const active = activeTab === tab.id
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  style={{
-                    background: 'transparent',
-                    color: active ? '#22c55e' : '#a1a1aa',
-                    border: 'none',
-                    borderBottom: active ? '2px solid #22c55e' : '2px solid transparent',
-                    padding: '10px 14px',
-                    fontSize: 13,
-                    fontWeight: active ? 500 : 400,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  {tab.label}
-                </button>
-              )
-            })}
-          </nav>
+          <span
+            style={{
+              display: 'inline-block',
+              background: 'rgba(34,197,94,0.12)',
+              color: '#22c55e',
+              border: '1px solid rgba(34,197,94,0.3)',
+              borderRadius: 6,
+              padding: '3px 9px',
+              fontSize: 11,
+              fontWeight: 600,
+            }}
+          >
+            ML.Aspek
+          </span>
         </div>
-      </header>
 
-      {/* Contenu */}
-      <main style={{ maxWidth: 960, margin: '0 auto', padding: '24px 16px' }}>
-        {activeTab === 'dashboard' && <Dashboard />}
-        {activeTab === 'trainer' && <Trainer />}
-        {activeTab === 'ranges' && <RangeMatrix />}
-        {activeTab === 'pushfold' && <PushFoldChart />}
-        {activeTab === 'equity' && <EquityCalc />}
-        {activeTab === 'strategy' && <PositionStrategy />}
-        {activeTab === 'table' && <TableMap />}
-        {activeTab === 'analyze' && <HandAnalyzer />}
-        {activeTab === 'progress' && <ProgressView />}
-        {activeTab === 'coach' && <PlayerCoach />}
+        {/* Navigation */}
+        <nav style={{ flex: 1, overflowY: 'auto', paddingTop: 4 }}>
+          {NAV.map(item => (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              aria-current={activeTab === item.id ? 'page' : undefined}
+              className={`sidebar-item${activeTab === item.id ? ' active' : ''}`}
+            >
+              <span style={{ fontSize: 15, width: 20, textAlign: 'center' }}>{item.icon}</span>
+              <span>{item.label}</span>
+            </button>
+          ))}
+        </nav>
+
+        {/* Footer version */}
+        <div style={{ padding: '14px 16px', fontSize: 11, color: 'rgba(255,255,255,0.25)' }}>
+          v0.1 beta
+        </div>
+      </aside>
+
+      {/* ───────────── Contenu principal ───────────── */}
+      <main style={{ flex: 1, overflowY: 'auto', height: '100vh' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 28px 48px' }}>
+          {activeTab === 'dashboard' && <Dashboard />}
+          {activeTab === 'trainer' && <Trainer />}
+          {activeTab === 'ranges' && <RangeMatrix />}
+          {activeTab === 'pushfold' && <PushFoldChart />}
+          {activeTab === 'equity' && <EquityCalc />}
+          {activeTab === 'strategy' && <PositionStrategy />}
+          {activeTab === 'table' && <TableMap />}
+          {activeTab === 'analyze' && <HandAnalyzer />}
+          {activeTab === 'progress' && <ProgressView />}
+          {activeTab === 'coach' && <PlayerCoach />}
+        </div>
       </main>
     </div>
   )

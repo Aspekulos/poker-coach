@@ -1,18 +1,55 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
 
+:root {
+  --bg-base: #0a0a0f;
+  --bg-card: #111118;
+  --bg-card-hover: #16161f;
+  --border: rgba(255, 255, 255, 0.07);
+  --text-primary: #f0f0f5;
+  --text-secondary: rgba(255, 255, 255, 0.5);
+  --accent-green: #22c55e;
+  --accent-red: #ef4444;
+  --accent-orange: #f59e0b;
+  --accent-blue: #3b82f6;
+}
+
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
   font-family: 'Inter', sans-serif;
-  background: #0f0f0f;
-  color: #f5f5f5;
+  background: var(--bg-base);
+  color: var(--text-primary);
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
 
-::-webkit-scrollbar { width: 5px; height: 5px; }
-::-webkit-scrollbar-track { background: #1a1a1a; }
-::-webkit-scrollbar-thumb { background: #3f3f46; border-radius: 3px; }
+/* Scrollbars custom : fines, discrètes */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.18); }
+* { scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, 0.1) transparent; }
+
+/* Carte générique réutilisable */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+/* Bouton primaire */
+.btn-primary {
+  background: var(--accent-green);
+  color: #000;
+  font-weight: 700;
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+  transition: filter 0.18s ease, opacity 0.18s ease;
+}
+.btn-primary:hover { filter: brightness(1.08); }
+.btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
 
 /* Prose styles pour markdown de l'analyseur */
 .prose-poker h2 { color: #22c55e; font-size: 15px; font-weight: 600; margin: 18px 0 8px; }
@@ -30,16 +67,77 @@ body {
 .suit-hearts, .suit-diamonds { color: #ef4444; }
 .suit-spades, .suit-clubs { color: #f5f5f5; }
 
-/* Carte avec léger relief 3D (utilisée par le Dashboard) */
+/* Stat card avec effet tilt 3D au survol (Dashboard) */
 .card-3d {
-  background: linear-gradient(145deg, #1d1d1d, #151515);
-  border: 1px solid #2a2a2a;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 16px 18px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 .card-3d:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  transform: perspective(1000px) rotateX(-4deg) rotateY(4deg) translateZ(8px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(34, 197, 94, 0.15);
+}
+
+/* Flip 3D des cartes de quiz (Trainer) */
+.card-flip-container { perspective: 1000px; }
+.card-flip {
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform 0.5s ease;
+  display: grid;
+}
+.card-flip > * { grid-area: 1 / 1; }
+.card-flip.flipped { transform: rotateY(180deg); }
+.card-front, .card-back {
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.card-back { transform: rotateY(180deg); }
+
+/* Cellules de la grille RFI : surbrillance fluide au survol */
+.rfi-cell {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, filter 0.18s ease, opacity 0.1s ease;
+}
+.rfi-cell:hover {
+  transform: scale(1.18);
+  box-shadow: 0 0 0 1px var(--accent-green), 0 4px 12px rgba(0, 0, 0, 0.5);
+  filter: brightness(1.18);
+  z-index: 2;
+}
+
+/* Sidebar de navigation */
+.sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-left: 3px solid transparent;
+  color: rgba(255, 255, 255, 0.45);
+  padding: 10px 16px;
+  font-size: 13.5px;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.sidebar-item:hover { background: rgba(255, 255, 255, 0.08); color: var(--text-primary); }
+.sidebar-item:focus-visible { outline: 2px solid var(--accent-green); outline-offset: -2px; }
+.sidebar-item.active {
+  background: rgba(34, 197, 94, 0.12);
+  border-left: 3px solid var(--accent-green);
+  color: #fff;
+  font-weight: 600;
+}
+
+/* Respect des préférences de mouvement réduit */
+@media (prefers-reduced-motion: reduce) {
+  .card-3d, .card-flip, .rfi-cell, .sidebar-item { transition: none !important; }
+  .card-3d:hover { transform: none; }
+  .card-flip.flipped { transition: none; }
+  .rfi-cell:hover { transform: none; }
 }

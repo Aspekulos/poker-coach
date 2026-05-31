@@ -91,6 +91,7 @@ export default function RangeMatrix() {
               return (
                 <div
                   key={`${i}-${j}`}
+                  className="rfi-cell"
                   onMouseEnter={(e) => {
                     setHoveredHand(hand)
                     const rect = e.currentTarget.getBoundingClientRect()
@@ -112,7 +113,6 @@ export default function RangeMatrix() {
                     borderRadius: 2,
                     cursor: 'pointer',
                     opacity: dimmed ? 0.15 : 1,
-                    transition: 'opacity 0.1s ease',
                   }}
                 >
                   {hand}

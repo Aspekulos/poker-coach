@@ -177,6 +177,42 @@ function StandardTrainer() {
     ? RFI_COLORS[spot.position as RFIPosition] ?? RFI_COLORS.Fold
     : { bg: 'rgba(34,197,94,0.15)', text: '#22c55e', label: spot.position }
 
+  // Faces partagées entre le recto (question) et le verso (résultat) du flip
+  const faceStyle: React.CSSProperties = {
+    background: '#1a1a1a',
+    border: '1px solid #2a2a2a',
+    borderRadius: 12,
+    padding: 24,
+  }
+
+  const badges = (
+    <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
+      <span style={{ background: posColor.bg, color: posColor.text, padding: '4px 10px', borderRadius: 4, fontSize: 12, fontWeight: 500 }}>
+        {spot.position}
+      </span>
+      {spot.mode === 'pushfold' && (
+        <span style={{ background: 'rgba(245,158,11,0.15)', color: '#f59e0b', padding: '4px 10px', borderRadius: 4, fontSize: 12, fontWeight: 500 }}>
+          {spot.stackBB} BB
+        </span>
+      )}
+      <span style={{ background: 'rgba(59,130,246,0.15)', color: '#3b82f6', padding: '4px 10px', borderRadius: 4, fontSize: 12, fontWeight: 500 }}>
+        {spot.mode === 'rfi' ? 'RFI Open' : 'Push/Fold'}
+      </span>
+    </div>
+  )
+
+  const handVisual = (
+    <>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 8 }}>
+        <CardVisual {...card1} />
+        <CardVisual {...card2} />
+      </div>
+      <p style={{ textAlign: 'center', fontSize: 13, color: '#a1a1aa', marginBottom: 24 }}>
+        {spot.hand}
+      </p>
+    </>
+  )
+
   return (
     <div>
       {/* Header */}
@@ -200,104 +236,53 @@ function StandardTrainer() {
         </button>
       </div>
 
-      {/* Card principal */}
-      <div
-        style={{
-          background: '#1a1a1a',
-          border: '1px solid #2a2a2a',
-          borderRadius: 12,
-          padding: 24,
-        }}
-      >
-        {/* Badges */}
-        <div style={{ display: 'flex', gap: 8, marginBottom: 20, flexWrap: 'wrap' }}>
-          <span
-            style={{
-              background: posColor.bg,
-              color: posColor.text,
-              padding: '4px 10px',
-              borderRadius: 4,
-              fontSize: 12,
-              fontWeight: 500,
-            }}
-          >
-            {spot.position}
-          </span>
-          {spot.mode === 'pushfold' && (
-            <span
-              style={{
-                background: 'rgba(245,158,11,0.15)',
-                color: '#f59e0b',
-                padding: '4px 10px',
-                borderRadius: 4,
-                fontSize: 12,
-                fontWeight: 500,
-              }}
-            >
-              {spot.stackBB} BB
-            </span>
-          )}
-          <span
-            style={{
-              background: 'rgba(59,130,246,0.15)',
-              color: '#3b82f6',
-              padding: '4px 10px',
-              borderRadius: 4,
-              fontSize: 12,
-              fontWeight: 500,
-            }}
-          >
-            {spot.mode === 'rfi' ? 'RFI Open' : 'Push/Fold'}
-          </span>
-        </div>
-
-        {/* Main visuelle */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 12, marginBottom: 8 }}>
-          <CardVisual {...card1} />
-          <CardVisual {...card2} />
-        </div>
-        <p style={{ textAlign: 'center', fontSize: 13, color: '#a1a1aa', marginBottom: 24 }}>
-          {spot.hand}
-        </p>
-
-        {/* Actions */}
-        {!answered ? (
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-            <button
-              onClick={() => handleAnswer('fold')}
-              style={{
-                background: 'rgba(239,68,68,0.15)',
-                color: '#ef4444',
-                border: '1px solid rgba(239,68,68,0.4)',
-                borderRadius: 8,
-                padding: 14,
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              Fold
-            </button>
-            <button
-              onClick={() => handleAnswer(spot.mode === 'rfi' ? 'raise' : 'push')}
-              style={{
-                background: 'rgba(34,197,94,0.15)',
-                color: '#22c55e',
-                border: '1px solid rgba(34,197,94,0.4)',
-                borderRadius: 8,
-                padding: 14,
-                fontSize: 15,
-                fontWeight: 600,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              {spot.mode === 'rfi' ? 'Raise 2.5 BB' : 'Push All-in'}
-            </button>
+      {/* Card principal — flip 3D à la révélation de la réponse */}
+      <div className="card-flip-container">
+        <div className={`card-flip${answered ? ' flipped' : ''}`}>
+          {/* RECTO — question + actions */}
+          <div className="card-front" style={{ ...faceStyle, pointerEvents: answered ? 'none' : 'auto' }}>
+            {badges}
+            {handVisual}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+              <button
+                onClick={() => handleAnswer('fold')}
+                style={{
+                  background: 'rgba(239,68,68,0.15)',
+                  color: '#ef4444',
+                  border: '1px solid rgba(239,68,68,0.4)',
+                  borderRadius: 8,
+                  padding: 14,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                Fold
+              </button>
+              <button
+                onClick={() => handleAnswer(spot.mode === 'rfi' ? 'raise' : 'push')}
+                style={{
+                  background: 'rgba(34,197,94,0.15)',
+                  color: '#22c55e',
+                  border: '1px solid rgba(34,197,94,0.4)',
+                  borderRadius: 8,
+                  padding: 14,
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  transition: 'all 0.15s ease',
+                }}
+              >
+                {spot.mode === 'rfi' ? 'Raise 2.5 BB' : 'Push All-in'}
+              </button>
+            </div>
           </div>
-        ) : (
-          <div>
+
+          {/* VERSO — résultat + explication */}
+          <div className="card-back" style={{ ...faceStyle, pointerEvents: answered ? 'auto' : 'none' }}>
+            {badges}
+            {handVisual}
             <div
               style={{
                 background: isCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(239,68,68,0.10)',
@@ -329,9 +314,6 @@ function StandardTrainer() {
                 {spot.explanation}
               </div>
             ) : (
-              // Bonne réponse + explication (affiché uniquement sur erreur).
-              // Équivalent inline du snippet Tailwind : bg-gray-800,
-              // border-gray-600, text-green-400, text-gray-300.
               <div
                 style={{
                   marginTop: 12,
@@ -367,7 +349,7 @@ function StandardTrainer() {
               Main suivante →
             </button>
           </div>
-        )}
+        </div>
       </div>
     </div>
   )
