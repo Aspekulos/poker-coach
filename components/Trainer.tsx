@@ -257,11 +257,22 @@ export default function Trainer() {
       {levelSelector}
 
       {/* Progression + score */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-        <span style={{ fontSize: 13, color: '#a1a1aa' }}>Question {index + 1} / {questions.length}</span>
-        <span style={{ fontSize: 13, color: '#a1a1aa' }}>
-          <strong style={{ color: '#22c55e' }}>{score.correct}</strong> / {score.total} bonnes réponses
-        </span>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <span style={{ fontSize: 13, color: '#a1a1aa' }}>Question {index + 1} / {questions.length}</span>
+          <span style={{ fontSize: 13, color: '#a1a1aa' }}>
+            <strong style={{ color: '#22c55e' }}>{score.correct}</strong> / {score.total} bonnes réponses
+          </span>
+        </div>
+        <div style={{ height: 4, background: '#2a2a2a', borderRadius: 2, overflow: 'hidden' }}>
+          <div style={{
+            height: '100%',
+            width: `${((index + 1) / questions.length) * 100}%`,
+            background: '#22c55e',
+            borderRadius: 2,
+            transition: 'width 0.3s ease',
+          }} />
+        </div>
       </div>
 
       <div style={{ background: '#1a1a1a', border: '1px solid #2a2a2a', borderRadius: 12, padding: 24 }}>
