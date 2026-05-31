@@ -25,8 +25,12 @@ interface CoachProfileJson {
   position_analysis?: Record<string, PositionEntry>
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Niveau demandé (le Trainer n'appelle cette route que pour le mode "leaks",
+    // mais on lit le paramètre pour l'intégrer au prompt).
+    const difficulty = new URL(request.url).searchParams.get('difficulty') ?? 'leaks'
+
     // 1) Dernier profil Coach généré
     const { data: row, error } = await supabase
       .from('coach_profiles')
@@ -61,7 +65,7 @@ export async function GET() {
         .join(' ; ') || 'aucune position particulièrement faible'
 
     // 3) Prompt système ciblé sur les vraies erreurs du joueur
-    const systemPrompt = `Tu es coach poker MTT. Génère 5 questions de quiz ciblées sur les vraies erreurs de ce joueur.
+    const systemPrompt = `Tu es coach poker MTT. Génère 5 questions de quiz ciblées sur les vraies erreurs de ce joueur (niveau : ${difficulty}).
 Ses leaks : ${leaksText}. Ses positions faibles : ${weakText}.
 Retourne UNIQUEMENT un JSON array de 5 objets :
 [{ question: string, options: string[4], correct: 0-3, explanation: string, position: string, topic: string }]
