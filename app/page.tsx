@@ -13,7 +13,6 @@ import {
   Scale,
   Map,
   MapPin,
-  Spade,
 } from 'lucide-react'
 
 const Loading = () => (
@@ -57,6 +56,19 @@ const NAV_REFS: { id: TabId; icon: NavIcon; label: string }[] = [
   { id: 'table',    icon: MapPin,  label: 'Positions' },
 ]
 
+const TAB_META: Record<TabId, { label: string; action?: string }> = {
+  dashboard: { label: 'Dashboard',    action: '+ Tournoi' },
+  analyze:   { label: 'Analyser',     action: '↑ Importer' },
+  coach:     { label: 'Mon Coach'     },
+  progress:  { label: 'Progression'  },
+  trainer:   { label: 'Trainer'      },
+  ranges:    { label: 'Ranges RFI'   },
+  pushfold:  { label: 'Push / Fold'  },
+  equity:    { label: 'Équité'       },
+  strategy:  { label: 'Stratégie'    },
+  table:     { label: 'Positions'    },
+}
+
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabId>('dashboard')
 
@@ -79,12 +91,15 @@ export default function Home() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <div style={{
               width: 28, height: 28,
-              background: 'var(--green-dim)',
-              border: '1px solid var(--green-border)',
-              borderRadius: 6,
+              background: 'rgba(34,197,94,0.08)',
+              border: '1px solid rgba(34,197,94,0.2)',
+              borderRadius: 7,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
-              <Spade size={14} strokeWidth={2} color="var(--green)" />
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2">
+                <path d="M12 2C6 2 4 7 4 12s2 10 8 10 8-5 8-10S18 2 12 2z"/>
+                <path d="M12 6v6l4 4"/>
+              </svg>
             </div>
             <h1 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
               Poker Coach
@@ -141,8 +156,27 @@ export default function Home() {
       </aside>
 
       {/* ───────────── Contenu principal ───────────── */}
-      <main style={{ flex: 1, overflowY: 'auto', height: '100vh' }}>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '28px 28px 48px' }}>
+      <main style={{ flex: 1, height: '100vh', display: 'flex', flexDirection: 'column' }}>
+        {/* Topbar */}
+        <div style={{
+          height: 48,
+          borderBottom: '1px solid rgba(255,255,255,0.06)',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 24px',
+          gap: 8,
+          flexShrink: 0,
+          background: '#0a0a14',
+        }}>
+          <span style={{
+            fontSize: 13, fontWeight: 500, color: '#eeeef5',
+          }}>
+            {TAB_META[activeTab].label}
+          </span>
+        </div>
+
+        {/* Contenu scrollable */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px' }}>
           {activeTab === 'dashboard' && <Dashboard />}
           {activeTab === 'trainer' && <Trainer />}
           {activeTab === 'ranges' && <RangeMatrix />}
