@@ -63,9 +63,50 @@ Structure EXACTE attendue :
 priority_leaks : exactement les 3 leaks les plus importants, classés par priorité, severity ∈ "high"|"medium"|"low".
 strengths : exactement 3 points forts. priority_actions : exactement 3 actions concrètes applicables tout de suite.`
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    // a) Récupère toutes les analyses individuelles
+    const force = new URL(request.url).searchParams.get('force') === 'true'
+
+    // 1) Nombre de mains individuelles actuelles
+    const { count, error: countError } = await supabase
+      .from('analyses')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_global', false)
+
+    if (countError) {
+      return NextResponse.json({ error: `Supabase: ${countError.message}` }, { status: 500 })
+    }
+
+    const handsCount = count ?? 0
+    if (handsCount === 0) {
+      return NextResponse.json(
+        { error: "Aucune main analysée pour l'instant. Analyse quelques mains avant de générer ton profil." },
+        { status: 500 }
+      )
+    }
+
+    // 2) Cache : un profil existe-t-il déjà pour ce même nombre de mains ?
+    //    Si oui et que force n'est pas demandé, on renvoie directement le cache
+    //    sans rappeler Claude.
+    if (!force) {
+      const { data: cached } = await supabase
+        .from('coach_profiles')
+        .select('profile_json, generated_at')
+        .eq('hands_count', handsCount)
+        .order('generated_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+
+      if (cached) {
+        return NextResponse.json({
+          ...(cached.profile_json as Record<string, unknown>),
+          cached: true,
+          generated_at: cached.generated_at,
+        })
+      }
+    }
+
+    // 3) (Re)génération : récupère le détail des analyses individuelles
     const { data, error } = await supabase
       .from('analyses')
       .select('position, cards, verdict, analysis_text, level')
@@ -148,7 +189,7 @@ Produis le profil de coaching JSON.`
     const end = raw.lastIndexOf('}')
     if (start !== -1 && end !== -1) raw = raw.slice(start, end + 1)
 
-    let profile: unknown
+    let profile: Record<string, unknown>
     try {
       profile = JSON.parse(raw)
     } catch {
@@ -158,7 +199,20 @@ Produis le profil de coaching JSON.`
       )
     }
 
-    return NextResponse.json(profile)
+    // 4) Mise en cache : insère le profil avec le nombre de mains courant.
+    const { data: inserted, error: insertError } = await supabase
+      .from('coach_profiles')
+      .insert({ profile_json: profile, hands_count: handsCount })
+      .select('generated_at')
+      .single()
+
+    if (insertError) console.error('coach_profiles insert error:', insertError)
+
+    return NextResponse.json({
+      ...profile,
+      cached: false,
+      generated_at: inserted?.generated_at ?? new Date().toISOString(),
+    })
   } catch (e) {
     console.error(e)
     return NextResponse.json(

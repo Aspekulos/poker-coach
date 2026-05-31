@@ -51,6 +51,13 @@ const LOADING_MESSAGES = [
 
 const PHASE_ORDER: PhaseKey[] = ['early', 'middle', 'bubble', 'final_table', 'short_stack']
 
+// "DD MMM YYYY" en français — ex: "31 mai 2026"
+function formatDate(iso: string): string {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  return new Intl.DateTimeFormat('fr-FR', { day: '2-digit', month: 'short', year: 'numeric' }).format(d)
+}
+
 // Palette
 const C = {
   card: '#1a1a1a',
@@ -133,6 +140,8 @@ function ScoreCircle({ score, size = 120 }: { score: number; size?: number }) {
 export default function PlayerCoach() {
   const [status, setStatus] = useState<Status>('idle')
   const [profile, setProfile] = useState<CoachProfile | null>(null)
+  const [cached, setCached] = useState(false)
+  const [generatedAt, setGeneratedAt] = useState<string | null>(null)
   const [errorMsg, setErrorMsg] = useState('')
   const [loadingMessage, setLoadingMessage] = useState('')
   const [activePhase, setActivePhase] = useState<PhaseKey>('early')
@@ -144,7 +153,7 @@ export default function PlayerCoach() {
     }
   }, [])
 
-  const generate = async () => {
+  const generate = async (force = false) => {
     setStatus('loading')
     setErrorMsg('')
     let idx = 0
@@ -155,10 +164,13 @@ export default function PlayerCoach() {
     }, 3000)
 
     try {
-      const res = await fetch('/api/coach')
+      const res = await fetch(force ? '/api/coach?force=true' : '/api/coach')
       const data = await res.json()
       if (!res.ok) throw new Error(data.error ?? 'Erreur lors de la génération du profil.')
-      setProfile(data as CoachProfile)
+      const { cached: isCached, generated_at, ...rest } = data
+      setProfile(rest as CoachProfile)
+      setCached(Boolean(isCached))
+      setGeneratedAt(typeof generated_at === 'string' ? generated_at : null)
       setStatus('loaded')
     } catch (e) {
       setErrorMsg(e instanceof Error ? e.message : 'Erreur inconnue')
@@ -170,10 +182,10 @@ export default function PlayerCoach() {
     }
   }
 
-  // ─── Bouton ───
-  const button = (
+  // ─── Bouton principal — visible uniquement quand aucun profil n'est affiché ───
+  const generateButton = (
     <button
-      onClick={generate}
+      onClick={() => generate(false)}
       disabled={status === 'loading'}
       style={{
         background: C.green,
@@ -187,17 +199,14 @@ export default function PlayerCoach() {
         opacity: status === 'loading' ? 0.6 : 1,
       }}
     >
-      {status === 'loading'
-        ? 'Génération…'
-        : profile
-        ? '↻ Régénérer mon profil'
-        : '🎓 Générer mon profil de coaching'}
+      {status === 'loading' ? 'Génération…' : '🎓 Générer mon profil de coaching'}
     </button>
   )
 
   return (
     <div style={{ color: C.white }}>
-      <div style={{ marginBottom: 20 }}>{button}</div>
+      {/* Le bouton de génération n'apparaît que si aucun profil n'est affiché */}
+      {!profile && <div style={{ marginBottom: 20 }}>{generateButton}</div>}
 
       {/* LOADING */}
       {status === 'loading' && (
@@ -231,9 +240,39 @@ export default function PlayerCoach() {
         </div>
       )}
 
-      {/* LOADED */}
-      {status === 'loaded' && profile && (
+      {/* LOADED — reste affiché même si une régénération échoue */}
+      {profile && status !== 'loading' && (
         <>
+          {/* En-tête : date de génération (cache) + régénération discrète */}
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 12,
+              flexWrap: 'wrap',
+              marginBottom: 16,
+            }}
+          >
+            <p style={{ fontSize: 13, color: C.muted }}>
+              {cached && generatedAt ? `Profil généré le ${formatDate(generatedAt)}` : ''}
+            </p>
+            <button
+              onClick={() => generate(true)}
+              style={{
+                background: 'transparent',
+                color: C.muted,
+                border: `1px solid ${C.border}`,
+                borderRadius: 6,
+                padding: '6px 12px',
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              ↺ Régénérer
+            </button>
+          </div>
+
           {/* SECTION 1 — Profil joueur */}
           <div style={cardStyle}>
             <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap', alignItems: 'center', marginBottom: 18 }}>
