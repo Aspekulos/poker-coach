@@ -150,16 +150,23 @@ function ScoreCircle({ score, size = 120 }: { score: number; size?: number }) {
   )
 }
 
+type ContentBlock =
+  | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } }
+  | { type: 'text'; text: string }
+
 interface ChatMsg {
   role: 'user' | 'assistant'
-  content: string
+  content: string | ContentBlock[]
+  imagePreview?: string   // data URL for display only (user messages with image)
 }
 
 function CoachChat({ playerProfile }: { playerProfile: string }) {
   const [messages, setMessages] = useState<ChatMsg[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
+  const [pendingImage, setPendingImage] = useState<{ data: string; mediaType: string; preview: string } | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
+  const fileRef = useRef<HTMLInputElement>(null)
 
   // Auto-scroll vers le dernier message.
   useEffect(() => {
@@ -167,12 +174,41 @@ function CoachChat({ playerProfile }: { playerProfile: string }) {
     if (el) el.scrollTop = el.scrollHeight
   }, [messages, sending])
 
+  const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = () => {
+      const result = reader.result as string
+      const base64 = result.split(',')[1]
+      const mediaType = file.type || 'image/jpeg'
+      setPendingImage({ data: base64, mediaType, preview: result })
+    }
+    reader.readAsDataURL(file)
+    e.target.value = ''   // allow re-selecting same file
+  }
+
   const send = async () => {
     const text = input.trim()
-    if (!text || sending) return
-    const next: ChatMsg[] = [...messages, { role: 'user', content: text }]
+    if (sending || (!text && !pendingImage)) return
+
+    let content: string | ContentBlock[]
+    let imagePreview: string | undefined
+    if (pendingImage) {
+      content = [
+        { type: 'image', source: { type: 'base64', media_type: pendingImage.mediaType, data: pendingImage.data } },
+        { type: 'text', text: text || '' },
+      ] as ContentBlock[]
+      imagePreview = pendingImage.preview
+    } else {
+      content = text
+      imagePreview = undefined
+    }
+
+    const next: ChatMsg[] = [...messages, { role: 'user', content, imagePreview }]
     setMessages(next)
     setInput('')
+    setPendingImage(null)
     setSending(true)
     try {
       const res = await fetch('/api/chat', {
@@ -197,7 +233,7 @@ function CoachChat({ playerProfile }: { playerProfile: string }) {
     }
   }
 
-  const sendDisabled = sending || input.trim() === ''
+  const sendDisabled = sending || (input.trim() === '' && !pendingImage)
 
   return (
     <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
@@ -237,7 +273,23 @@ function CoachChat({ playerProfile }: { playerProfile: string }) {
               whiteSpace: 'pre-wrap',
             }}
           >
-            <ReactMarkdown>{m.content}</ReactMarkdown>
+            <>
+              {m.imagePreview && (
+                <img
+                  src={m.imagePreview}
+                  alt="Screenshot"
+                  style={{ maxWidth: '100%', borderRadius: 6, marginBottom: 4, display: 'block' }}
+                />
+              )}
+              <ReactMarkdown>
+                {typeof m.content === 'string'
+                  ? m.content
+                  : (m.content as ContentBlock[])
+                      .filter((b): b is { type: 'text'; text: string } => b.type === 'text')
+                      .map(b => b.text)
+                      .join('')}
+              </ReactMarkdown>
+            </>
           </div>
         ))}
         {sending && (
@@ -247,7 +299,48 @@ function CoachChat({ playerProfile }: { playerProfile: string }) {
         )}
       </div>
 
+      {pendingImage && (
+        <div style={{ position: 'relative', display: 'inline-block', marginBottom: 8 }}>
+          <img src={pendingImage.preview} alt="À envoyer" style={{ maxHeight: 80, borderRadius: 6 }} />
+          <button
+            onClick={() => setPendingImage(null)}
+            style={{
+              position: 'absolute', top: -6, right: -6,
+              background: '#444', color: '#fff', border: 'none',
+              borderRadius: '50%', width: 18, height: 18, fontSize: 10,
+              cursor: 'pointer', lineHeight: '18px', textAlign: 'center',
+            }}
+          >×</button>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: 8 }}>
+        {/* Hidden file input */}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          onChange={onFileChange}
+          style={{ display: 'none' }}
+        />
+
+        {/* Paperclip button */}
+        <button
+          onClick={() => fileRef.current?.click()}
+          title="Joindre une capture d'écran"
+          style={{
+            background: 'var(--bg-surface-2)',
+            color: 'var(--text-dim)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-md)',
+            width: 40, height: 40,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            cursor: 'pointer', flexShrink: 0, fontSize: 16,
+          }}
+        >
+          📎
+        </button>
+
         <input
           type="text"
           value={input}

@@ -5,9 +5,13 @@ const client = new Anthropic()
 
 type Role = 'user' | 'assistant'
 
+type ContentBlock =
+  | { type: 'image'; source: { type: 'base64'; media_type: string; data: string } }
+  | { type: 'text'; text: string }
+
 interface ChatMessage {
   role: Role
-  content: string
+  content: string | ContentBlock[]
 }
 
 interface ChatBody {
@@ -22,8 +26,13 @@ export async function POST(request: Request) {
     const playerProfile = typeof body.playerProfile === 'string' ? body.playerProfile : 'Profil non disponible.'
 
     // On ne garde que les messages exploitables et on coerce les rôles.
+    // Le contenu peut être une string OU un tableau de blocs Anthropic (image + texte).
     const cleaned = messages
-      .filter(m => m && typeof m.content === 'string' && m.content.trim() !== '')
+      .filter(m => {
+        if (!m) return false
+        if (typeof m.content === 'string') return m.content.trim() !== ''
+        return Array.isArray(m.content)
+      })
       .map<ChatMessage>(m => ({
         role: m.role === 'assistant' ? 'assistant' : 'user',
         content: m.content,
@@ -42,7 +51,7 @@ Tu peux analyser des mains si le joueur les décrit.`
       model: 'claude-sonnet-4-6',
       max_tokens: 800,
       system,
-      messages: cleaned,
+      messages: cleaned as Anthropic.MessageParam[],
     })
 
     const reply = response.content[0]?.type === 'text' ? response.content[0].text : ''
