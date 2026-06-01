@@ -104,7 +104,7 @@ export default function Home() {
               lineHeight: 1,
               flexShrink: 0,
             }}>
-              <svg width="13" height="13" viewBox="0 0 100 100" fill="#22c55e">
+              <svg width="13" height="13" viewBox="0 0 100 100" fill="currentColor">
                 <path d="M50 5 C50 5 10 35 10 58 C10 75 25 82 38 76
                          C34 85 28 90 20 92 L80 92
                          C72 90 66 85 62 76
