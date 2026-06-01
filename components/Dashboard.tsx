@@ -256,7 +256,7 @@ export default function Dashboard() {
   const totalGain = tournaments.reduce((s, t) => s + num(t.gain), 0)
   const pnl = totalGain - totalBuyIn
   const roi = totalBuyIn > 0 ? (pnl / totalBuyIn) * 100 : 0
-  const itmCount = tournaments.filter(t => num(t.gain) > 0).length
+  const itmCount = tournaments.filter(t => num(t.gain_placement) > 0).length
   const itm = count > 0 ? (itmCount / count) * 100 : 0
   const avgBuyIn = count > 0 ? totalBuyIn / count : 0
 
