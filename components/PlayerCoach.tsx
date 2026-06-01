@@ -177,15 +177,42 @@ function CoachChat({ playerProfile }: { playerProfile: string }) {
   const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-    const reader = new FileReader()
-    reader.onload = () => {
-      const result = reader.result as string
-      const base64 = result.split(',')[1]
-      const mediaType = file.type || 'image/jpeg'
-      setPendingImage({ data: base64, mediaType, preview: result })
+
+    const img = new window.Image()
+    const objectUrl = URL.createObjectURL(file)
+
+    img.onload = () => {
+      URL.revokeObjectURL(objectUrl)
+
+      // Resize to max 1200px on the longest side
+      const MAX = 1200
+      let { width, height } = img
+      if (width > MAX || height > MAX) {
+        if (width >= height) {
+          height = Math.round((height * MAX) / width)
+          width = MAX
+        } else {
+          width = Math.round((width * MAX) / height)
+          height = MAX
+        }
+      }
+
+      const canvas = document.createElement('canvas')
+      canvas.width = width
+      canvas.height = height
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+      ctx.drawImage(img, 0, 0, width, height)
+
+      // Encode as JPEG at 80% quality — keeps size well under 1MB
+      const dataUrl = canvas.toDataURL('image/jpeg', 0.8)
+      const base64 = dataUrl.split(',')[1]
+
+      setPendingImage({ data: base64, mediaType: 'image/jpeg', preview: dataUrl })
     }
-    reader.readAsDataURL(file)
-    e.target.value = ''   // allow re-selecting same file
+
+    img.src = objectUrl
+    e.target.value = ''
   }
 
   const send = async () => {
