@@ -104,7 +104,13 @@ export default function Home() {
                          C90 35 50 5 50 5 Z"/>
               </svg>
             </div>
-            <h1 style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.01em' }}>
+            <h1 style={{
+              fontFamily: 'var(--font-playfair)',
+              fontWeight: 600,
+              fontSize: 14,
+              color: '#e4e0d8',
+              letterSpacing: '0.01em',
+            }}>
               Poker Coach
             </h1>
           </div>
@@ -174,7 +180,14 @@ export default function Home() {
           <span style={{
             fontSize: 13, fontWeight: 500, color: '#eeeef5',
           }}>
-            {TAB_META[activeTab].label}
+            <span style={{
+              fontFamily: 'var(--font-playfair)',
+              fontStyle: 'italic',
+              fontWeight: 400,
+              fontSize: 16,
+            }}>
+              {TAB_META[activeTab]?.label ?? activeTab}
+            </span>
           </span>
         </div>
 
