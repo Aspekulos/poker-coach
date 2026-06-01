@@ -90,6 +90,8 @@ body {
   font-weight: 450;
   color: var(--text-secondary);
   cursor: pointer;
+  background: transparent;
+  border: none;
   transition: all 0.15s;
   text-decoration: none;
   position: relative;
