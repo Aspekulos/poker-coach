@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import ReactMarkdown from 'react-markdown'
 
 type Severity = 'high' | 'medium' | 'low'
 
@@ -236,7 +237,7 @@ function CoachChat({ playerProfile }: { playerProfile: string }) {
               whiteSpace: 'pre-wrap',
             }}
           >
-            {m.content}
+            <ReactMarkdown>{m.content}</ReactMarkdown>
           </div>
         ))}
         {sending && (
