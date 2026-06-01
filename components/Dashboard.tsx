@@ -22,17 +22,25 @@ interface Tournament {
 }
 
 const C = {
-  bg:          '#0c0c18',
-  bgElevated:  '#111120',
-  border:      'rgba(255,255,255,0.07)',
-  text:        '#eeeef5',
-  muted:       'rgba(255,255,255,0.35)',
-  dim:         'rgba(255,255,255,0.15)',
-  green:       '#22c55e',
-  greenDim:    'rgba(34,197,94,0.08)',
-  greenBorder: 'rgba(34,197,94,0.22)',
-  red:         '#ef4444',
-  orange:      '#f59e0b',
+  bg: '#09090b',
+  surface: '#111113',
+  surface2: '#1c1c1f',
+  border: '#27272a',
+  border2: '#3f3f46',
+  text: '#e4e0d8',
+  dim: '#a1a1aa',
+  dim2: '#52525b',
+  gold: '#c9a84c',
+  goldDim: 'rgba(201,168,76,0.10)',
+  red: '#c0392b',
+  redDim: 'rgba(192,57,43,0.10)',
+  greenBright: '#22c55e',
+  orange: '#d97706',
+}
+
+const SUIT: Record<string, string> = {
+  EP:'♦', MP:'♣', CO:'♥', BTN:'♠',
+  SB:'♦', BB:'♣', UTG:'♦', HJ:'♣', LJ:'♣',
 }
 
 const TYPES = ['KO', 'Classic', 'Rebuy', 'Autre']
@@ -69,7 +77,7 @@ const mono = "'JetBrains Mono','Fira Code',monospace"
 const sectionTitle: React.CSSProperties = {
   fontSize: 9,
   fontWeight: 600,
-  color: C.dim,
+  color: C.dim2,
   textTransform: 'uppercase',
   letterSpacing: '0.09em',
   marginBottom: 12,
@@ -84,10 +92,10 @@ function BankrollTooltip({ active, payload }: BankrollTooltipProps) {
   if (!active || !payload?.length) return null
   const p = payload[0]
   return (
-    <div style={{ background: C.bgElevated, border: `1px solid ${C.border}`, borderRadius: 6, padding: '8px 12px', fontSize: 12 }}>
-      <p style={{ color: C.muted, marginBottom: 4 }}>{p.payload.date}</p>
-      {p.payload.name && <p style={{ color: C.muted, marginBottom: 4 }}>{p.payload.name}</p>}
-      <p style={{ color: p.value >= 0 ? C.green : C.red, fontWeight: 600 }}>
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, padding: '8px 12px', fontSize: 12 }}>
+      <p style={{ color: C.dim, marginBottom: 4 }}>{p.payload.date}</p>
+      {p.payload.name && <p style={{ color: C.dim, marginBottom: 4 }}>{p.payload.name}</p>}
+      <p style={{ color: p.value >= 0 ? C.greenBright : C.red, fontWeight: 600 }}>
         Solde : {eur(p.value, true)}
       </p>
     </div>
@@ -103,10 +111,10 @@ interface BarTooltipProps {
 function ScoreBarTooltip({ active, payload, label }: BarTooltipProps) {
   if (!active || !payload?.length) return null
   return (
-    <div style={{ background: C.bgElevated, border: `1px solid ${C.border}`, borderRadius: 6, padding: '8px 12px', fontSize: 12 }}>
-      <p style={{ color: C.muted, marginBottom: 4 }}>{label}</p>
-      <p style={{ color: C.green, fontWeight: 600 }}>Score : {payload[0].value}%</p>
-      <p style={{ color: C.muted }}>{payload[0].payload.total} mains</p>
+    <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 6, padding: '8px 12px', fontSize: 12 }}>
+      <p style={{ color: C.dim, marginBottom: 4 }}>{label}</p>
+      <p style={{ color: C.greenBright, fontWeight: 600 }}>Score : {payload[0].value}%</p>
+      <p style={{ color: C.dim }}>{payload[0].payload.total} mains</p>
     </div>
   )
 }
@@ -127,13 +135,13 @@ function StatCard({ icon, label, value, sub, color }: {
           background: 'rgba(255,255,255,0.04)',
           borderRadius: 5,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: C.muted,
+          color: C.dim,
         }}>
           {icon}
         </div>
         <span style={{
           fontSize: 9, fontWeight: 600,
-          color: C.dim,
+          color: C.dim2,
           textTransform: 'uppercase', letterSpacing: '0.09em',
         }}>{label}</span>
       </div>
@@ -142,7 +150,7 @@ function StatCard({ icon, label, value, sub, color }: {
         fontSize: 22, fontWeight: 500,
         color, lineHeight: 1, marginBottom: 4,
       }}>{value}</div>
-      <div style={{ fontSize: 10, color: C.dim }}>{sub}</div>
+      <div style={{ fontSize: 10, color: C.dim2 }}>{sub}</div>
     </div>
   )
 }
@@ -161,7 +169,7 @@ const inputStyle: React.CSSProperties = {
 
 const fieldLabel: React.CSSProperties = {
   fontSize: 9, fontWeight: 600,
-  color: C.dim,
+  color: C.dim2,
   marginBottom: 5, display: 'block',
   textTransform: 'uppercase', letterSpacing: '0.08em',
 }
@@ -305,13 +313,13 @@ export default function Dashboard() {
       .map(([k, v]) => ({ date: dayMonth(k), score: Math.round((v.good / v.total) * 100), total: v.total }))
   })()
 
-  const barColor = (s: number) => (s > 70 ? C.green : s >= 50 ? C.orange : C.red)
+  const barColor = (s: number) => (s > 70 ? C.greenBright : s >= 50 ? C.orange : C.red)
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', padding: 60, color: C.muted, fontSize: 13 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'center', padding: 60, color: C.dim, fontSize: 13 }}>
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-          <circle cx="12" cy="12" r="9" stroke={C.green} strokeWidth="2.5" strokeDasharray="40 20" strokeLinecap="round">
+          <circle cx="12" cy="12" r="9" stroke={C.greenBright} strokeWidth="2.5" strokeDasharray="40 20" strokeLinecap="round">
             <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="1s" repeatCount="indefinite" />
           </circle>
         </svg>
@@ -332,19 +340,19 @@ export default function Dashboard() {
             icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>}
             label="P&L Total" value={eur(pnl, true)}
             sub={`sur ${count} tournoi${count > 1 ? 's' : ''}`}
-            color={pnl >= 0 ? C.green : C.red}
+            color={pnl >= 0 ? C.gold : C.red}
           />
           <StatCard
             icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>}
             label="ROI" value={`${roi > 0 ? '+' : ''}${roi.toFixed(1)}%`}
             sub={`sur ${count} tournoi${count > 1 ? 's' : ''}`}
-            color={roi >= 0 ? C.green : C.red}
+            color={roi >= 0 ? C.gold : C.red}
           />
           <StatCard
             icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>}
             label="ITM %" value={`${itm.toFixed(0)}%`}
             sub={`${itmCount} / ${count} ITM`}
-            color={C.text}
+            color={C.gold}
           />
           <StatCard
             icon={<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>}
@@ -372,15 +380,15 @@ export default function Dashboard() {
           ) : (
             <ResponsiveContainer width="100%" height={200}>
               <LineChart data={bankroll} margin={{ top: 4, right: 8, bottom: 0, left: -12 }}>
-                <XAxis dataKey="date" tick={{ fontSize: 11, fill: C.dim }} axisLine={{ stroke: C.border }} tickLine={false} />
-                <YAxis tick={{ fontSize: 11, fill: C.dim }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}€`} />
+                <XAxis dataKey="date" tick={{ fontSize: 11, fill: C.dim2 }} axisLine={{ stroke: C.border }} tickLine={false} />
+                <YAxis tick={{ fontSize: 11, fill: C.dim2 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}€`} />
                 <Tooltip content={<BankrollTooltip />} />
                 <Line
                   type="monotone"
                   dataKey="balance"
-                  stroke={C.green}
+                  stroke={C.greenBright}
                   strokeWidth={2}
-                  dot={{ fill: C.green, r: 3, strokeWidth: 0 }}
+                  dot={{ fill: C.greenBright, r: 3, strokeWidth: 0 }}
                   activeDot={{ r: 6, fill: '#4ade80' }}
                 />
               </LineChart>
@@ -391,19 +399,19 @@ export default function Dashboard() {
         {/* Rangée 3 : score décisions + score par position */}
         <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: '16px 20px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-            <p style={{ fontSize: 9, fontWeight: 600, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.09em', margin: 0 }}>
+            <p style={{ fontSize: 9, fontWeight: 600, color: C.dim2, textTransform: 'uppercase', letterSpacing: '0.09em', margin: 0 }}>
               Score décisions
             </p>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <span style={{ fontSize: 10, color: C.green }}>✓ {aGood}</span>
+              <span style={{ fontSize: 10, color: C.greenBright }}>✓ {aGood}</span>
               <span style={{ fontSize: 10, color: C.orange }}>△ {aWarn}</span>
               <span style={{ fontSize: 10, color: C.red }}>✗ {aBad}</span>
-              <span style={{ fontSize: 10, color: C.dim }}>{aTotal} mains</span>
+              <span style={{ fontSize: 10, color: C.dim2 }}>{aTotal} mains</span>
             </div>
           </div>
 
           {aTotal === 0 ? (
-            <p style={{ color: C.dim, fontSize: 13 }}>
+            <p style={{ color: C.dim2, fontSize: 13 }}>
               Aucune main analysée. Importe un fichier dans l&apos;onglet Analyser.
             </p>
           ) : (
@@ -413,31 +421,36 @@ export default function Dashboard() {
                 <span style={{
                   fontFamily: mono,
                   fontSize: 36, fontWeight: 500,
-                  color: aScore > 70 ? C.green : aScore >= 50 ? C.orange : C.red,
+                  color: C.gold,
                   lineHeight: 1,
                 }}>{aScore}</span>
-                <span style={{ fontSize: 14, color: C.muted }}>%</span>
+                <span style={{ fontSize: 14, color: C.dim }}>%</span>
               </div>
               {/* Barre globale */}
               <div style={{ height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden', marginBottom: 16 }}>
-                <div style={{ height: '100%', width: `${aScore}%`, background: aScore > 70 ? C.green : aScore >= 50 ? C.orange : C.red, borderRadius: 2 }} />
+                <div style={{ height: '100%', width: `${aScore}%`, background: aScore > 70 ? C.greenBright : aScore >= 50 ? C.orange : C.red, borderRadius: 2 }} />
               </div>
 
               {/* Score par position */}
               {positionScores.length > 0 && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 7, borderTop: `1px solid ${C.border}`, paddingTop: 14 }}>
-                  <p style={{ fontSize: 9, fontWeight: 600, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 4 }}>
+                  <p style={{ fontSize: 9, fontWeight: 600, color: C.dim2, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 4 }}>
                     Par position
                   </p>
                   {positionScores.map(({ pos, score, total }) => {
-                    const col = score > 80 ? C.green : score >= 65 ? C.orange : C.red
+                    const col = score > 80 ? C.greenBright : score >= 65 ? C.orange : C.red
                     return (
                       <div key={pos} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                         <span style={{
                           fontFamily: mono,
-                          fontSize: 10, color: C.muted,
-                          width: 32, flexShrink: 0,
-                        }}>{pos}</span>
+                          fontSize: 10, color: C.dim,
+                          width: 48, flexShrink: 0,
+                        }}>
+                          <span style={{color:C.dim2, fontSize:10, marginRight:4, fontFamily:'serif'}}>
+                            {SUIT[pos] ?? '♠'}
+                          </span>
+                          {pos.toUpperCase()}
+                        </span>
                         <div style={{ flex: 1, height: 3, background: 'rgba(255,255,255,0.06)', borderRadius: 2, overflow: 'hidden' }}>
                           <div style={{ height: '100%', width: `${score}%`, background: col, borderRadius: 2, transition: 'width 0.4s ease' }} />
                         </div>
@@ -446,7 +459,7 @@ export default function Dashboard() {
                           fontSize: 10, color: col,
                           width: 34, textAlign: 'right', flexShrink: 0,
                         }}>{score}%</span>
-                        <span style={{ fontSize: 9, color: C.dim, width: 28, flexShrink: 0 }}>{total}m</span>
+                        <span style={{ fontSize: 9, color: C.dim2, width: 28, flexShrink: 0 }}>{total}m</span>
                       </div>
                     )
                   })}
@@ -456,7 +469,7 @@ export default function Dashboard() {
               {/* Graphe sessions */}
               {sessionBars.length > 0 && (
                 <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 14, marginTop: 14 }}>
-                  <p style={{ fontSize: 9, fontWeight: 600, color: C.dim, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 10 }}>
+                  <p style={{ fontSize: 9, fontWeight: 600, color: C.dim2, textTransform: 'uppercase', letterSpacing: '0.09em', marginBottom: 10 }}>
                     Évolution par session
                   </p>
                   <ResponsiveContainer width="100%" height={90}>
@@ -518,7 +531,7 @@ export default function Dashboard() {
               <input type="number" step="0.01" value={form.gain_bounties} onChange={set('gain_bounties')} placeholder="0.00" style={inputStyle} />
             </div>
           </div>
-          <div style={{ marginBottom: 10, fontSize: 12, color: C.muted }}>
+          <div style={{ marginBottom: 10, fontSize: 12, color: C.dim }}>
             Total : <strong style={{ color: C.text }}>{(num(form.gain_placement) + num(form.gain_bounties)).toFixed(2)} €</strong>
           </div>
 
@@ -539,11 +552,8 @@ export default function Dashboard() {
           <button
             type="submit"
             disabled={submitting}
+            className="btn-primary"
             style={{
-              background: C.green, color: '#000',
-              fontWeight: 600, fontSize: 12,
-              padding: '10px', borderRadius: 6,
-              border: 'none', width: '100%',
               cursor: submitting ? 'not-allowed' : 'pointer',
               opacity: submitting ? 0.5 : 1,
             }}
@@ -556,7 +566,7 @@ export default function Dashboard() {
         <div style={{ background: C.bg, border: `1px solid ${C.border}`, borderRadius: 10, padding: 18 }}>
           <p style={sectionTitle}>Derniers tournois</p>
           {recent.length === 0 ? (
-            <p style={{ color: C.dim, fontSize: 13 }}>Aucun tournoi enregistré</p>
+            <p style={{ color: C.dim2, fontSize: 13 }}>Aucun tournoi enregistré</p>
           ) : (
             <div style={{ overflowX: 'auto' }}>
               <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
@@ -568,7 +578,7 @@ export default function Dashboard() {
                         style={{
                           padding: i === 0 ? '0 6px 8px 0' : '0 6px 8px',
                           fontSize: 9, fontWeight: 600,
-                          color: C.dim,
+                          color: C.dim2,
                           textTransform: 'uppercase', letterSpacing: '0.09em',
                           textAlign: i >= 2 && i <= 6 ? 'right' : 'left',
                         }}
@@ -584,16 +594,16 @@ export default function Dashboard() {
                     const bounties = num(t.gain_bounties)
                     return (
                       <tr key={t.id} style={{ borderTop: `1px solid ${C.border}` }}>
-                        <td style={{ padding: '8px 6px 8px 0', color: C.muted, whiteSpace: 'nowrap' }}>{dayMonth(t.played_at)}</td>
+                        <td style={{ padding: '8px 6px 8px 0', color: C.dim, whiteSpace: 'nowrap' }}>{dayMonth(t.played_at)}</td>
                         <td style={{ padding: 6, color: C.text, maxWidth: 90, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.tournament_name || '—'}</td>
-                        <td style={{ padding: 6, textAlign: 'right', color: C.muted, fontFamily: mono }}>{num(t.buy_in).toFixed(2)}</td>
-                        <td style={{ padding: 6, textAlign: 'right', color: C.muted, fontFamily: mono }}>{t.position}{t.total_players ? `/${t.total_players}` : ''}</td>
-                        <td style={{ padding: 6, textAlign: 'right', color: C.muted, fontFamily: mono }}>{num(t.gain_placement).toFixed(2)}</td>
-                        <td style={{ padding: 6, textAlign: 'right', color: bounties > 0 ? C.green : C.dim, fontFamily: mono, whiteSpace: 'nowrap' }}>
+                        <td style={{ padding: 6, textAlign: 'right', color: C.dim, fontFamily: mono }}>{num(t.buy_in).toFixed(2)}</td>
+                        <td style={{ padding: 6, textAlign: 'right', color: C.dim, fontFamily: mono }}>{t.position}{t.total_players ? `/${t.total_players}` : ''}</td>
+                        <td style={{ padding: 6, textAlign: 'right', color: C.dim, fontFamily: mono }}>{num(t.gain_placement).toFixed(2)}</td>
+                        <td style={{ padding: 6, textAlign: 'right', color: bounties > 0 ? C.greenBright : C.dim2, fontFamily: mono, whiteSpace: 'nowrap' }}>
                           {bounties > 0 ? bounties.toFixed(2) : '—'}
                         </td>
-                        <td style={{ padding: 6, textAlign: 'right', fontWeight: 600, fontFamily: mono, color: profit >= 0 ? C.green : C.red }}>{eur(profit, true)}</td>
-                        <td style={{ padding: 6, color: C.dim }}>{t.type}</td>
+                        <td style={{ padding: 6, textAlign: 'right', fontWeight: 600, fontFamily: mono, color: profit >= 0 ? C.greenBright : C.red }}>{eur(profit, true)}</td>
+                        <td style={{ padding: 6, color: C.dim2 }}>{t.type}</td>
                       </tr>
                     )
                   })}
