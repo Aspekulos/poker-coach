@@ -90,11 +90,19 @@ export default function Home() {
         <div style={{ padding: '18px 16px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
             <div style={{
-              width: 28, height: 28,
-              background: 'rgba(34,197,94,0.08)',
-              border: '1px solid rgba(34,197,94,0.2)',
-              borderRadius: 7,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 28,
+              height: 28,
+              background: 'rgba(201,168,76,0.12)',
+              border: '1px solid rgba(201,168,76,0.30)',
+              borderRadius: 6,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: 14,
+              color: '#c9a84c',
+              fontFamily: 'serif',
+              lineHeight: 1,
+              flexShrink: 0,
             }}>
               <svg width="13" height="13" viewBox="0 0 100 100" fill="#22c55e">
                 <path d="M50 5 C50 5 10 35 10 58 C10 75 25 82 38 76
