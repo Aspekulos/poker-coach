@@ -149,6 +149,145 @@ function ScoreCircle({ score, size = 120 }: { score: number; size?: number }) {
   )
 }
 
+interface ChatMsg {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+function CoachChat({ playerProfile }: { playerProfile: string }) {
+  const [messages, setMessages] = useState<ChatMsg[]>([])
+  const [input, setInput] = useState('')
+  const [sending, setSending] = useState(false)
+  const scrollRef = useRef<HTMLDivElement>(null)
+
+  // Auto-scroll vers le dernier message.
+  useEffect(() => {
+    const el = scrollRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [messages, sending])
+
+  const send = async () => {
+    const text = input.trim()
+    if (!text || sending) return
+    const next: ChatMsg[] = [...messages, { role: 'user', content: text }]
+    setMessages(next)
+    setInput('')
+    setSending(true)
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: next, playerProfile }),
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error ?? 'Erreur lors de la requête.')
+      setMessages(m => [...m, { role: 'assistant', content: String(data.reply ?? '') }])
+    } catch (e) {
+      setMessages(m => [...m, { role: 'assistant', content: `⚠️ ${e instanceof Error ? e.message : 'Erreur inconnue'}` }])
+    } finally {
+      setSending(false)
+    }
+  }
+
+  const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault()
+      send()
+    }
+  }
+
+  const sendDisabled = sending || input.trim() === ''
+
+  return (
+    <div style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+      <div
+        ref={scrollRef}
+        style={{
+          background: 'var(--bg-surface-1)',
+          border: '1px solid var(--border-subtle)',
+          borderRadius: 'var(--radius-lg)',
+          padding: 16,
+          height: 420,
+          overflowY: 'auto',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          marginBottom: 12,
+        }}
+      >
+        {messages.length === 0 && (
+          <p style={{ color: 'var(--text-dim)', fontSize: 13, margin: 'auto', textAlign: 'center', lineHeight: 1.6 }}>
+            Pose une question à ton coach ou décris une main pour qu&apos;il l&apos;analyse.
+          </p>
+        )}
+        {messages.map((m, i) => (
+          <div
+            key={i}
+            style={{
+              alignSelf: m.role === 'user' ? 'flex-end' : 'flex-start',
+              maxWidth: '80%',
+              background: m.role === 'user' ? 'var(--gold-dim)' : 'var(--bg-surface-2)',
+              color: 'var(--text-primary)',
+              border: `1px solid ${m.role === 'user' ? 'rgba(201,168,76,0.25)' : 'var(--border-subtle)'}`,
+              borderRadius: 10,
+              padding: '8px 12px',
+              fontSize: 13,
+              lineHeight: 1.55,
+              whiteSpace: 'pre-wrap',
+            }}
+          >
+            {m.content}
+          </div>
+        ))}
+        {sending && (
+          <div style={{ alignSelf: 'flex-start', color: 'var(--text-dim)', fontSize: 13, fontStyle: 'italic' }}>
+            Le coach réfléchit…
+          </div>
+        )}
+      </div>
+
+      <div style={{ display: 'flex', gap: 8 }}>
+        <input
+          type="text"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={onKeyDown}
+          placeholder="Écris ton message…"
+          style={{
+            flex: 1,
+            background: 'var(--bg-surface-2)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-subtle)',
+            borderRadius: 'var(--radius-md)',
+            padding: '10px 12px',
+            fontSize: 13,
+            fontFamily: 'inherit',
+            outline: 'none',
+          }}
+        />
+        <button
+          onClick={send}
+          disabled={sendDisabled}
+          style={{
+            background: 'var(--gold)',
+            color: '#09090b',
+            border: 'none',
+            borderRadius: 'var(--radius-md)',
+            padding: '10px 20px',
+            fontSize: 13,
+            fontWeight: 600,
+            cursor: sendDisabled ? 'not-allowed' : 'pointer',
+            opacity: sendDisabled ? 0.5 : 1,
+            flexShrink: 0,
+          }}
+        >
+          Envoyer
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function PlayerCoach() {
   const [status, setStatus] = useState<Status>('initializing')
   const [profile, setProfile] = useState<CoachProfile | null>(null)
@@ -157,6 +296,7 @@ export default function PlayerCoach() {
   const [errorMsg, setErrorMsg] = useState('')
   const [loadingMessage, setLoadingMessage] = useState('')
   const [activePhase, setActivePhase] = useState<PhaseKey>('early')
+  const [view, setView] = useState<'profile' | 'chat'>('profile')
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
 
   useEffect(() => {
@@ -238,8 +378,52 @@ export default function PlayerCoach() {
     </button>
   )
 
+  // Résumé textuel du profil envoyé au chat (archétype + points forts + leaks).
+  const profileSummary = profile
+    ? [
+        `Archétype : ${profile.style} — ${profile.style_description}`,
+        `Score global : ${profile.global_score}/100`,
+        `Points forts : ${profile.strengths.join(' ; ')}`,
+        `Leaks prioritaires : ${profile.priority_leaks
+          .map(l => `${l.title} (${severityLabel(l.severity)}) — ${l.description}`)
+          .join(' ; ')}`,
+      ].join('\n')
+    : "Le profil de coaching n'a pas encore été généré."
+
+  const tabBar = (
+    <div style={{ display: 'flex', gap: 6, marginBottom: 18 }}>
+      {(['profile', 'chat'] as const).map(v => {
+        const active = view === v
+        return (
+          <button
+            key={v}
+            onClick={() => setView(v)}
+            style={{
+              background: active ? 'var(--gold-dim)' : 'transparent',
+              color: active ? 'var(--gold)' : C.muted,
+              border: `1px solid ${active ? 'rgba(201,168,76,0.4)' : C.border}`,
+              borderRadius: 6,
+              padding: '6px 16px',
+              fontSize: 13,
+              fontWeight: active ? 600 : 400,
+              cursor: 'pointer',
+            }}
+          >
+            {v === 'profile' ? 'Profil' : 'Chat'}
+          </button>
+        )
+      })}
+    </div>
+  )
+
   return (
     <div style={{ color: C.white }}>
+      {tabBar}
+
+      {view === 'chat' && <CoachChat playerProfile={profileSummary} />}
+
+      {view === 'profile' && (
+      <>
       {/* Le bouton de génération n'apparaît que si aucun profil n'est affiché
           (et pas pendant l'auto-chargement initial) */}
       {!profile && status !== 'initializing' && (
@@ -505,6 +689,8 @@ export default function PlayerCoach() {
             </div>
           </div>
         </>
+      )}
+      </>
       )}
     </div>
   )
